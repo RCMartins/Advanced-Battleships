@@ -1,0 +1,287 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.17+ wizard for JavaCC 1.5.0+
+ */
+options
+{
+  JDK_VERSION = "1.5";
+  static = false;
+  //LOOKAHEAD = 2;
+  //DEBUG_PARSER = true;
+}
+
+PARSER_BEGIN(ParserGameModes)
+package pt.rmartins.battleships.parser.gamemodes;
+
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.util.List;
+import java.util.ArrayList;
+
+import android.util.Log;
+
+import pt.rmartins.battleships.objects.ShipClass;
+import pt.rmartins.battleships.objects.PlayerClass.Shot.KindShot;
+import pt.rmartins.battleships.objects.modes.GameBonus;
+import pt.rmartins.battleships.objects.modes.GameMode;
+import pt.rmartins.battleships.objects.modes.GameMode.MessagesMode;
+import pt.rmartins.battleships.objects.modes.GameMode.BonusPlay;
+import pt.rmartins.battleships.objects.modes.GameMode.BonusPlay.ConditionType;
+
+public class ParserGameModes {
+
+	public static List<GameMode> parseGameModes(String s)	{
+	  	return parseGameModes(new ByteArrayInputStream(s.getBytes()));	}
+
+	public static List<GameMode> parseGameModes(InputStream in)
+	{
+	  	ParserGameModes parser = new ParserGameModes(in);
+		try {
+			return parser.main();
+		}catch(Exception e){
+		    Log.e("Error reading game modes file", e.getMessage());
+			return new ArrayList<GameMode>(0); 
+		}
+	}
+
+}
+
+PARSER_END(ParserGameModes)
+
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
+}
+
+TOKEN : /* OPERATORS */
+{
+  < LPAR : "(" >
+| < RPAR : ")" >
+| < LSBRA : "[" >
+| < RSBRA : "]" >
+| < LBRA : "{" >
+| < RBRA : "}" >
+| < SEMICOLON : ";" >
+| < COMMA : "," >
+| < DDOT : ":" >
+| < DOT : "." >
+| < PLUS : "+" >
+| < MINUS : "-" >
+| < MULT : "*" >
+| < DIV : "/" >
+| < MOD : "%" > 
+| < VERSION : "Version" >
+
+| < HITS : "Hits" >
+| < NORMAL_SHOT : "NormalShot" >
+| < INDESTRUCTIBLE_SHOT : "IndestructibleShot" >
+| < CAMERA_SHOT : "CameraShot" >
+| < NOTHING : "Nothing" >
+
+| < MESSAGES_MODE : "MessagesMode" >
+| < NORMAL : "Normal" >
+| < NDELAY : "NDelay" >
+
+| < TIME_SAVE : "TimeSave" >
+
+| < FULL_SHIELD : "FullShield" >
+
+| < TIME_LIMIT : "TimeLimit" >
+| < UNLIMITED : "Unlimited" >
+
+| < BONUS_PLAY : "BonusPlay" >
+| < EXTRA_TIME : "ExtraTime" >
+| < EXTRA_TURN : "ExtraTurn" >
+
+| < FIRST_BLOOD : "FirstBlood" >
+| < KILL : "Kill" >
+| < DOUBLE_KILL : "DoubleKill" >
+| < TRIPLE_KILL : "TripleKill" >
+| < ULTRA_KILL : "UltraKill" >
+| < RAMPAGE : "Rampage" >
+| < NO_WATER_IN_A_ROW : "NoWaterInARow" >
+| < KILLING_SPREE : "KillingSpree" >
+| < DOMINATING : "Dominating" >
+| < MEGA_KILL : "MegaKill" >
+| < UNSTOPPABLE : "Unstoppable" >
+| < WICKED_SICK : "WickedSick" >
+| < MONSTER_KILL : "MonsterKill" >
+| < GODLIKE : "Godlike" >
+| < HOLY_SHIT : "HolyShit" >
+
+| < SHIPS : "Ships" >
+| < SHIELD : "Shield" >
+//| < FULL_SHIELD : "FullShield" >
+| < EXPLOSIVE : "Explosive" >
+| < EACH_ALIVE_SHOTS : "EachAliveShots" >
+| < ANY_ALIVE_SHOTS : "AnyAliveShots" >
+| < EACH_DEAD_SHOTS : "EachDeadShots" >
+| < ALL_DEAD_SHOTS : "AllDeadShots" >
+
+}
+
+TOKEN :
+{
+  < NUM : (< DIGIT >)+ | "-" (< DIGIT >)+ >
+| < ID : (< CHAR >) (< CHAR > | < DIGIT >)* >
+| < #DIGIT : [ "0"-"9" ] >
+| < #CHAR : ["a"-"z", "A"-"Z", "_"] >
+| < DECIMAL:
+     (< DIGIT >)+ "." (< DIGIT >)+
+   | "." (< DIGIT >)+
+   | (< DIGIT >)+ >
+}
+
+List<GameMode> main() :{ List<GameMode> list; GameMode gameMode; int version; 
+  Token t; }
+{
+  { list = new ArrayList<GameMode>();
+    version = 1; }  ( < VERSION > < DDOT > t = < NUM > < SEMICOLON > { version = Integer.parseInt(t.image); }
+  | t = < ID > < LBRA > gameMode = readGameMode(t.image) < RBRA > { list.add(gameMode); }
+  )*
+  { return list; }
+}
+
+GameMode readGameMode(String modeName) :
+{ GameMode mode; Token t; }
+{
+  { mode = new GameMode();
+    mode.setName(modeName); }
+  ( < HITS > < DDOT > readShots(mode) < SEMICOLON >
+  | < MESSAGES_MODE > < DDOT > (
+        < NORMAL > { mode.setShowKind(MessagesMode.NORMAL); }
+      | < NDELAY > t = < NUM > { mode.setShowKind(MessagesMode.NDELAY); mode.setShowKindParameters(Integer.parseInt(t.image)); }) < SEMICOLON >
+  | < TIME_SAVE > < DDOT > t = < DECIMAL > { mode.setTimeSave(Double.parseDouble(t.image)); } < SEMICOLON > 
+  | < FULL_SHIELD > < DDOT > t = < DECIMAL > { mode.setFullShield(Float.parseFloat(t.image)); }  < SEMICOLON > 
+  | < TIME_LIMIT > < DDOT > readTimeLimit(mode) < SEMICOLON >
+  | < BONUS_PLAY > < LBRA > ( bonusPlay(mode) )* < RBRA >
+  | < SHIPS > < LBRA > ( ships(mode) )* < RBRA >
+  )*
+  { return mode; }
+}
+
+void readShots(GameMode mode) :
+{ List<List<KindShot>> listShots; List<KindShot> list; }
+{
+  { listShots = new ArrayList<List<KindShot>>(); }
+  list = readShotsAux()
+  { listShots.add(list); }
+  ( < COMMA > list = readShotsAux() { listShots.add(list); } )*
+  { mode.setTotalShoots(listShots); }
+  { return; }
+}
+
+List<KindShot> readShotsAux() :
+{ KindShot kindShot; Token t; int n; List<KindShot> list; }
+{
+  { list = new ArrayList<KindShot>(); }
+  ( kindShot = readKindShot() t = < NUM > {
+      n = Integer.parseInt(t.image); 
+      for (int i = 0; i < n; i++) {
+        list.add(kindShot);
+      } 
+    }
+  )+
+  { return list; }
+}
+
+KindShot readKindShot() :
+{}
+{
+  < NORMAL_SHOT > { return KindShot.NormalShot; }
+| < INDESTRUCTIBLE_SHOT > { return KindShot.IndestructibleShot; }
+| < CAMERA_SHOT > { return KindShot.CameraShot; }
+}
+
+void readTimeLimit(GameMode mode) :
+{ Token t, t2, t3; }{
+    < UNLIMITED > { mode.setTimeLimit(0); }
+  | t = < NUM > { mode.setTimeLimit(Integer.parseInt(t.image)); }
+  ( < COMMA > t2 = < NUM > { mode.setTimeLimitAndPerTurn(Integer.parseInt(t.image), Integer.parseInt(t2.image)); }
+	( < COMMA > t3 = < NUM > { mode.setTimeLimitPerTurnExtra(Integer.parseInt(t.image), Integer.parseInt(t2.image), Integer.parseInt(t3.image)); } )?
+  )? }
+
+void bonusPlay(GameMode mode) :
+{ BonusPlay bonus; Token t; }
+{
+( < FIRST_BLOOD > < DDOT > { bonus = new BonusPlay(ConditionType.FirstBlood); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < KILL > < DDOT > { bonus = new BonusPlay(ConditionType.Kill); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < DOUBLE_KILL > < DDOT > { bonus = new BonusPlay(ConditionType.DoubleKill); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < TRIPLE_KILL > < DDOT > { bonus = new BonusPlay(ConditionType.TripleKill); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < ULTRA_KILL > < DDOT > { bonus = new BonusPlay(ConditionType.UltraKill); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < RAMPAGE > < DDOT > { bonus = new BonusPlay(ConditionType.Rampage); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < NO_WATER_IN_A_ROW > t = < NUM > < DDOT > { bonus = new BonusPlay(ConditionType.NoWaterInARow, Integer.parseInt(t.image)); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < KILLING_SPREE > < DDOT > { bonus = new BonusPlay(ConditionType.KillingSpree); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < DOMINATING > < DDOT > { bonus = new BonusPlay(ConditionType.Dominating); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < MEGA_KILL > < DDOT > { bonus = new BonusPlay(ConditionType.MegaKill); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < UNSTOPPABLE > < DDOT > { bonus = new BonusPlay(ConditionType.Unstoppable); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < WICKED_SICK > < DDOT > { bonus = new BonusPlay(ConditionType.WickedSick); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < MONSTER_KILL > < DDOT > { bonus = new BonusPlay(ConditionType.MonsterKill); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < GODLIKE > < DDOT > { bonus = new BonusPlay(ConditionType.Godlike); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+| < HOLY_SHIT > < DDOT > { bonus = new BonusPlay(ConditionType.HolyShit); } readBonusPlay(bonus) ( < COMMA > readBonusPlay(bonus) )* < SEMICOLON >
+) { mode.addPossibleBonus(bonus); }
+}
+
+void readBonusPlay(BonusPlay bonus) :
+{ Token t; List<KindShot> list; }
+{
+  < EXTRA_TURN > < LPAR > list = readShotsAux() < RPAR > { bonus.addAction(new GameBonus.ExtraTurn(list)); }
+| < EXTRA_TIME > < LPAR > t = < NUM > < RPAR > { bonus.addAction(new GameBonus.ExtraTime(Integer.parseInt(t.image))); }
+  { return; }
+}
+
+void ships(GameMode mode) :
+{ Token t; int shipId, explosive; List<Double> shieldList;
+  List<KindShot> eachAliveShots, anyAliveShots, eachDeadShots, allDeadShots; }
+{
+  t = < ID > < DDOT >
+  { shipId = ShipClass.getId(t.image);
+    shieldList = new ArrayList<Double>();
+    explosive = 0;
+    eachAliveShots = new ArrayList<KindShot>();
+    anyAliveShots = new ArrayList<KindShot>();
+    eachDeadShots = new ArrayList<KindShot>();
+    allDeadShots = new ArrayList<KindShot>();
+  }
+  ( < SHIELD > < LPAR >
+      t = < DECIMAL > { shieldList.add(Double.parseDouble(t.image)); }
+      ( < COMMA > t = < DECIMAL > { shieldList.add(Double.parseDouble(t.image)); } )*
+      < RPAR > 
+  | < EXPLOSIVE > < LPAR >
+      t = < NUM > < RPAR > { explosive = Integer.parseInt(t.image); }
+  | < EACH_ALIVE_SHOTS > < LPAR > eachAliveShots = readShotsAux() < RPAR >
+  | < ANY_ALIVE_SHOTS > < LPAR > anyAliveShots = readShotsAux() < RPAR >
+  | < EACH_DEAD_SHOTS > < LPAR > eachDeadShots = readShotsAux() < RPAR >
+  | < ALL_DEAD_SHOTS > < LPAR > allDeadShots = readShotsAux() < RPAR >
+  )
+  ( < COMMA >
+    ( < SHIELD > < LPAR >
+        t = < DECIMAL > { shieldList.add(Double.parseDouble(t.image)); }
+        ( < COMMA > t = < DECIMAL > { shieldList.add(Double.parseDouble(t.image)); } )*
+        < RPAR > 
+    | < EXPLOSIVE > < LPAR >
+        t = < NUM > < RPAR > { explosive = Integer.parseInt(t.image); }
+    | < EACH_ALIVE_SHOTS > < LPAR > eachAliveShots = readShotsAux() < RPAR >
+    | < ANY_ALIVE_SHOTS > < LPAR > anyAliveShots = readShotsAux() < RPAR >
+    | < EACH_DEAD_SHOTS > < LPAR > eachDeadShots = readShotsAux() < RPAR >
+    | < ALL_DEAD_SHOTS > < LPAR > allDeadShots = readShotsAux() < RPAR >
+    )
+  )*
+  < SEMICOLON >
+  { if(t.image.equals("All")) {
+      for (int id = 0; id < ShipClass.numberOfShips(); id++) {
+        mode.addShipExtraInfo(id, eachAliveShots, anyAliveShots, eachDeadShots, allDeadShots, explosive, shieldList);
+      }
+    } else if(shipId != -1) {        mode.addShipExtraInfo(shipId, eachAliveShots, anyAliveShots, eachDeadShots, allDeadShots, explosive, shieldList);
+    }
+  }
+}
+
+/*
+int getInteger() :
+{ Token t; }
+{| 
+}
+*/

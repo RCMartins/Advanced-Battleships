@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="mainmenu_1player">Single Player</string>
+	<string name="mainmenu_2players">Multiplayer</string>
+	<string name="mainmenu_options">Options</string>
+	<string name="mainmenu_version">Version %1$s</string>
+	
+	<string name="messages_mode_normal">Normal</string>
+	<string name="messages_mode_ndelay">Delay</string>
+	
+	<string name="bonus_types_extraturn">Extra turn</string>
+	<string name="bonus_types_explosion">Explosion</string>
+	<string name="bonus_types_extratime">Extra time</string>
+	
+	<string name="options_title">Options</string>
+	<string name="options_language_change">Change language: </string>
+	<string name="options_sound">Sound</string>
+	<string name="options_sound_on">On</string>
+	<string name="options_sound_off">Off</string>
+	
+	<string name="condition_type_firstblood_detail">	Be the first player to destroy ships</string>
+	<string name="condition_type_kill_detail">			Kill a ship</string>
+	<string name="condition_type_doublekill_detail">	Kill 2 ships in the same turn</string>
+	<string name="condition_type_triplekill_detail">	Kill 3 ships in the same turn</string>
+	<string name="condition_type_ultrakill_detail">		Kill 4 ships in the same turn</string>
+	<string name="condition_type_rampage_detail">		Kill 5 ships in the same turn</string>
+	<string name="condition_type_nowaterinarow_detail">	Don\'t miss all shots for %1$d turns in a row</string>
+	<string name="condition_type_killingspree_detail">	Destroy ships in 3 turns in a row</string>
+	<string name="condition_type_dominating_detail">	Destroy ships in 4 turns in a row</string>
+	<string name="condition_type_megakill_detail">		Destroy ships in 5 turns in a row</string>
+	<string name="condition_type_unstoppable_detail">	Destroy ships in 6 turns in a row</string>
+	<string name="condition_type_wickedsick_detail">	Destroy ships in 7 turns in a row</string>
+	<string name="condition_type_monsterkill_detail">	Destroy ships in 8 turns in a row</string>
+	<string name="condition_type_godlike_detail">		Destroy ships in 9 turns in a row</string>
+	<string name="condition_type_holyshit_detail">		Destroy ships in 10 or more turns in a row</string>
+	
+	<string name="placing_ships_undo">Undo</string>
+	<string name="placing_ships_clear">Undo All</string>
+	<string name="placing_ships_rotate">Rotate</string>
+	<string name="placing_ships_next">Next</string>
+	<string name="placing_ships_ready">Ready</string>
+	<string name="placing_ships_waiting">Waiting</string>
+	<string name="placing_ships_enemy_ready">Enemy ready</string>
+	
+	<string name="playing_undo">Undo</string>
+	<string name="playing_target">Target</string>
+	<string name="playing_launch">Launch</string>
+	<string name="playing_enemy_turn">Enemy turn</string>
+	<string name="playing_your_turn">Your turn</string>
+	<string name="playing_your_extra_turn">You got an extra turn!</string>
+	<string name="playing_enemy_extra_turn">Enemy got an extra turn!</string>
+	<string name="playing_you_won">You won!</string>
+	<string name="playing_enemy_won">Enemy won!</string>
+	<string name="playing_max_space_needed">Enemy turn (999)</string>
+	<string name="playing_rematch">Rematch</string>
+	<string name="playing_rematch_request">Rematch request</string>
+	<string name="playing_rematch_accept">Accept</string>
+	<string name="playing_rematch_decline">Decline</string>
+	<string name="playing_back_to_mainmenu">Back to\nmain menu</string>
+	<string name="playing_game_paused">Game Paused</string>
+	<string name="playing_exit_game_question">Exit Game?</string>
+	<string name="playing_exit_game_yes">Yes</string>
+	<string name="playing_exit_game_no">No</string>
+	<string name="playing_menu_game_info">Game Info</string>
+	<string name="playing_menu_my">My Ships</string>
+	<string name="playing_menu_enemy">Enemy</string>
+	<string name="playing_my_info_ships_lost">Ships Lost: %1$d / %2$d</string>
+	
+	<string name="choose_screen_choose_fleet">Choose\nfleet</string>
+	<string name="choose_screen_choose_gamemode">Choose\ngame mode</string>
+	<string name="choose_screen_choose_fieldsize">Choose field size</string>
+	
+	<string name="gameinfo_field_size">				Field size: %1$02d x %2$02d</string>
+	<string name="gameinfo_timelimit_unlimited">	Time limit: Unlimited</string>
+	<string name="gameinfo_timelimit">				Time limit: %1$d</string>
+	<string name="gameinfo_timelimit_turn">			Time limit: %1$d + %2$d per turn</string>
+	<string name="gameinfo_timelimit_extra_fast">	Time limit: %1$d + %2$d per turn + %3$d extra</string>
+	<string name="gameinfo_messages_mode">			Messages mode: %1$s</string>
+	<string name="gameinfo_messages_mode_param">	Messages mode: %1$s %2$d</string>
+	<string name="gameinfo_full_shield">			Full shield: %1$02.1f%%</string>
+	<string name="gameinfo_multikill_bonus">		Multi-kill bonus:</string>
+	
+	<string name="multiplayer_enemy_disconnected">Enemy Disconnected</string>
+</resources>

@@ -1,0 +1,134 @@
+/**
+  * BonusPlay: FirstBlood, Kill, DoubleKill, TripleKill, UltraKill, NoWaterInARow <Turns>, 
+  * 		   KillingSpree, Dominating, Unstoppable, HolyShit
+  *			   
+  * Bonus: ExtraTurn [NormalShot, IndestructibleShot, BigShot, 
+  *						MiniCameraShot, CameraShot, MegaCameraShot, RightCrossKill, LeftCrossKill]
+  *
+  * Ships: [All|ShipName] : [PlusShot, AllPlusShot, DeadShot, AllDeadShot, Shield, Explosive]
+  *
+  * Turn:		Turn <begin> - <max> { Turn Differences }
+  * FullTurn:	FullTurn <begin> - <max> { Full Game Mode }
+  *
+ **/
+
+Version: 1.1.0;
+
+/*
+Test1 {
+	Hits: NormalShot 3;
+	GameMode: NDelay 2;
+	TimeLimit: Unlimited;
+	FullShield: 0.02;
+	BonusPlay {
+		FirstBlood: ExtraTurn(NormalShot 1 MiniCameraShot 1);
+		DoubleKill: ExtraTurn(NormalShot 1 MiniCameraShot 1);
+		TripleKill: ExtraTurn(NormalShot 3 MiniCameraShot 1);
+	}
+}
+*/
+Normal_Game {
+	Hits: NormalShot 3;
+	GameMode: classic;
+	TimeLimit: Unlimited;
+	//FullShield: 0.025;
+	BonusPlay {
+		FirstBlood: ExtraTurn(NormalShot 1); // MiniCameraShot 1);
+		DoubleKill: ExtraTurn(NormalShot 1); // MiniCameraShot 1);
+		TripleKill: ExtraTurn(NormalShot 3); // MiniCameraShot 1);
+	}
+}
+/*
+Game {	
+	Hits: NormalShot 3, NormalShot 3, NormalShot 3 MiniCameraShot 2; 
+	GameMode: classic;
+	//TimeSave: 0.5;
+	TimeLimit: 0;
+	BonusPlay {
+		FirstBlood: ExtraTurn(NormalShot 1 MiniCameraShot 1);
+		DoubleKill: ExtraTurn(NormalShot 1 MiniCameraShot 1);
+		TripleKill: ExtraTurn(NormalShot 3 MiniCameraShot 1);
+		
+		//UltraKill: ExtraTurn(BigShot 1);
+		//NoWaterInARow 10: ExtraTurn(NormalShot 1);
+		//NoWaterInARow 15: ExtraTurn(NormalShot 2);
+		//NoWaterInARow 20: ExtraTurn(NormalShot 3);
+		//NoWaterInARow 25: ExtraTurn(NormalShot 4);
+	}
+
+	Ships {
+		//Submarino: 		Shield(0.5, 0.25);
+		Barco 2 Canos: 		Shield(0.5, 0.25, 0.1), Explosive(1); 
+		//Cruzador:			Shield(0.5, 0.25, 0.1);
+		//Petroleiro:			Explosive(3);
+		//Mega Porta Aviões:	Explosive(3);
+		
+		//Submarino: AllDeadShots(NormalShot 1);
+		//Submarino: Explosive(8); 
+		//Mother Ship: PlusShot(NormalShot 1);
+	}
+	
+	FullTurn 1 - 50 {
+		Hits: NormalShot 3 MiniCameraShot 2; 
+		
+		BonusPlay {
+			FirstBlood: ExtraTurn(NormalShot 3 MiniCameraShot 1);
+			DoubleKill: ExtraTurn(NormalShot 3 CameraShot 1);
+			TripleKill: ExtraTurn(NormalShot 4 CameraShot 2);
+		}
+	}
+	
+	FullTurn 10 - 30 {
+		Hits: NormalShot 3; 
+		
+		BonusPlay {
+			FirstBlood: ExtraTurn(NormalShot 1 MiniCameraShot 1);
+			DoubleKill: ExtraTurn(NormalShot 1);
+			TripleKill: ExtraTurn(NormalShot 3);
+		}
+	}
+	
+	
+	//Turn 1 - 3 {
+	//	Hits: NormalShot 3 MiniCameraShot 2; 
+		
+		//Petroleiro: PlusShot(IndestructibleShot 2), Shield(0.5, 0.25, 0.1, 0.05);
+	//}	
+
+}
+
+Real_Game {	
+	Hits: NormalShot 3; 
+	BonusPlay {
+		FirstBlood: ExtraTurn(NormalShot 1 MiniCameraShot 1);
+		DoubleKill: ExtraTurn(NormalShot 1 MiniCameraShot 1);
+		TripleKill: ExtraTurn(NormalShot 3 MiniCameraShot 1);
+	}
+	Ships {
+		Barco 2 Canos: 	Explosive(1); 
+		Cruzador:		Shield(0.5, 0.25, 0.1);
+		Petroleiro:		Explosive(4);
+		Mother Ship: 	PlusShot(NormalShot 1);
+	}
+	
+	FullTurn 1 - 5 {
+		Hits: NormalShot 3 MiniCameraShot 1; 
+		
+		BonusPlay {
+			FirstBlood: ExtraTurn(NormalShot 3 MiniCameraShot 1);
+			DoubleKill: ExtraTurn(NormalShot 3 CameraShot 1);
+			TripleKill: ExtraTurn(NormalShot 4 CameraShot 2);
+		}
+	}
+	
+	FullTurn 50 - * {
+		Hits: NormalShot 3; 
+		
+		BonusPlay {
+			DoubleKill: ExtraTurn(NormalShot 1);
+			TripleKill: ExtraTurn(NormalShot 3);
+		}
+	}
+}
+
+*/

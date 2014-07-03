@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string name="mainmenu_1player">1 Jogador</string>
+	<string name="mainmenu_2players">2 Jogadores</string>
+	<string name="mainmenu_options">Opções</string>
+	<string name="mainmenu_version">Versão %1$s</string>
+	
+	<string name="messages_mode_normal">Normal</string>
+	<string name="messages_mode_ndelay">Atrado</string>
+	
+	<string name="bonus_types_extraturn">Turno extra</string>
+	<string name="bonus_types_explosion">Explosão</string>
+	<string name="bonus_types_extratime">Tempo extra</string>
+	
+	<string name="options_title">Opções</string>
+	<string name="options_language_change">Alterar idioma: </string>
+	<string name="options_sound">Som</string>
+	<string name="options_sound_on">Ligado</string>
+	<string name="options_sound_off">Desligado</string>
+	
+	<string name="condition_type_firstblood_detail">	Ser o primeiro jogador a destruír barcos</string>
+	<string name="condition_type_kill_detail">			Destruir 1 barco numa jogada</string>
+	<string name="condition_type_doublekill_detail">	Destruir 2 barcos na mesma jogada</string>
+	<string name="condition_type_triplekill_detail">	Destruir 3 barcos na mesma jogada</string>
+	<string name="condition_type_ultrakill_detail">		Destruir 4 barcos na mesma jogada</string>
+	<string name="condition_type_rampage_detail">		Destruir 5 barcos na mesma jogada</string>
+	<string name="condition_type_nowaterinarow_detail">	Acertar pelo menos um tiro em %1$d jogadas seguidas</string>
+	<string name="condition_type_killingspree_detail">	Destruir barcos em 3 jogadas seguidas</string>
+	<string name="condition_type_dominating_detail">	Destruir barcos em 4 jogadas seguidas</string>
+	<string name="condition_type_megakill_detail">		Destruir barcos em 5 jogadas seguidas</string>
+	<string name="condition_type_unstoppable_detail">	Destruir barcos em 6 jogadas seguidas</string>
+	<string name="condition_type_wickedsick_detail">	Destruir barcos em 7 jogadas seguidas</string>
+	<string name="condition_type_monsterkill_detail">	Destruir barcos em 8 jogadas seguidas</string>
+	<string name="condition_type_godlike_detail">		Destruir barcos em 9 jogadas seguidas</string>
+	<string name="condition_type_holyshit_detail">		Destruir barcos em 10 ou mais jogadas seguidas</string>
+	
+	<string name="placing_ships_undo">Remover</string>
+	<string name="placing_ships_clear">Remover Todos</string>
+	<string name="placing_ships_rotate">Rodar</string>
+	<string name="placing_ships_next">Seguinte</string>
+	<string name="placing_ships_ready">Pronto</string>
+	<string name="placing_ships_waiting">À espera</string>
+	<string name="placing_ships_enemy_ready">Adversário pronto</string>
+	
+	<string name="playing_undo">Remover</string>
+	<string name="playing_target">Seleccionar</string>
+	<string name="playing_launch">Lançar</string>
+	<string name="playing_enemy_turn">Turno do adversário</string>
+	<string name="playing_your_turn">É o seu turno</string>
+	<string name="playing_your_extra_turn">Ganhou um turno extra!</string>
+	<string name="playing_enemy_extra_turn">O adversário ganhou um turno extra!</string>
+	<string name="playing_you_won">Ganhou o jogo!</string>
+	<string name="playing_enemy_won">Perdeu o jogo!</string>
+	<string name="playing_max_space_needed">Turno do adversário (999)</string>
+	<string name="playing_rematch">Voltar a jogar</string>
+	<string name="playing_rematch_request">Rematch request</string>
+	<string name="playing_rematch_accept">Aceitar</string>
+	<string name="playing_rematch_decline">Recusar</string>
+	<string name="playing_back_to_mainmenu">Voltar ao\nmenu principal</string>
+	<string name="playing_game_paused">Jogo em pausa</string>
+	<string name="playing_exit_game_question">Sair do Jogo?</string>
+	<string name="playing_exit_game_yes">Sim</string>
+	<string name="playing_exit_game_no">Não</string>
+	<string name="playing_menu_game_info">Info. jogo</string>
+	<string name="playing_menu_my">Eu</string>
+	<string name="playing_menu_enemy">Adver.</string>
+	<string name="playing_my_info_ships_lost">Barcos perdidos: %1$d / %2$d</string>
+	
+	<string name="choose_screen_choose_fleet">Escolher frota</string>
+	<string name="choose_screen_choose_gamemode">Escolher modo de jogo</string>
+	<string name="choose_screen_choose_fieldsize">Escolher tamanho do campo</string>
+	
+	<string name="gameinfo_field_size">				Tamanho: %1$02d x %2$02d</string>
+	<string name="gameinfo_timelimit_unlimited">	Tempo limite: ilimitado</string>
+	<string name="gameinfo_timelimit">				Tempo limite: %1$d</string>
+	<string name="gameinfo_timelimit_turn">			Tempo limite: %1$d + %2$d por turno</string>
+	<string name="gameinfo_timelimit_extra_fast">	Tempo limite: %1$d + %2$d por turno + %3$d extra</string>
+	<string name="gameinfo_messages_mode">			Modo de mensagens: %1$s</string>
+	<string name="gameinfo_messages_mode_param">	Modo de mensagens: %1$s %2$d</string>
+	<string name="gameinfo_full_shield">			Escudo total: %1$02.1f%%</string>
+	<string name="gameinfo_multikill_bonus">		Bonus de Multi-kill:</string>
+	
+	<string name="multiplayer_enemy_disconnected">Adversário Desconectou-se</string>
+</resources>

@@ -1,0 +1,17 @@
+Version: 2;
+Languages: pt, en-US;
+
+Submarino; 				Submarine;			0000000000000008	//0,0
+Barco 2 Canos; 			Skeeter;			000000000000000C	//0,0 0,1
+Barco 3 Canos; 			Ranger;				000000000000000E	//0,0 0,1 0,2
+Barco 4 Canos; 			Conqueror;			000000000000000F	//0,0 0,1 0,2 0,3
+Porta Aviões; 			Aircraft carrier;	0000000000000000	//0,0 1,0 2,0 1,1 1,2
+Contratorpedeiro; 		Torpedo boat;		0000000000000000	//1,0 0,1 0,2 2,1 2,2
+Cruzador; 				Cruiser;			0000000000000000	//0,0 1,1 2,2
+Petroleiro; 			Epoch;				0000000000000000	//0,0 1,0 2,0 0,1 1,1 2,1 1,2
+Mega Porta Aviões; 		Battleship;			0000000000000000	//0,0 1,0 2,0 1,1 0,2 1,2 2,2 1,3 1,4
+Barco Mãe;				Colossus;			0000000000000000	//0,0 1,0 3,0 5,0 6,0 1,1 2,1 3,1 4,1 5,1 0,2 1,2 3,2 5,2 6,2
+Super Cruzador;			Heavy Cruiser;		0000000000000000	//2,0 1,1 3,1 0,2 4,2 1,3 3,3
+Destruidor;				Destroyer 			0000000000000000	//2,0 2,1 0,2 1,2 2,2 3,2 4,2 2,3 2,4
+Barco 6 Canos;			Fire Ship;			0000000000000000	//0,0 0,1 0,2 0,3 0,4 0,5
+

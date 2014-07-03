@@ -1,0 +1,112 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.17+ wizard for JavaCC 1.5.0+
+ */
+options
+{
+  JDK_VERSION = "1.5";
+  static = false;
+}
+
+PARSER_BEGIN(ParserShips)
+package pt.rmartins.battleships.parser.ships;
+
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.util.Locale;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
+import java.lang.StringBuilder;
+
+import android.util.Log;
+
+import pt.rmartins.battleships.objects.ShipClass;
+import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.utilities.LanguageClass;
+
+public class ParserShips {
+
+	public static void parseShips(String s)	{
+	  	parseShips(new ByteArrayInputStream(s.getBytes()));	}
+
+	public static void parseShips(InputStream in)
+	{
+	  	ParserShips parser = new ParserShips(in);
+		try {
+			parser.main();
+		}catch(Exception e){
+		    Log.e("Error reading ships file", e.getMessage());
+		}
+	}
+
+}
+
+PARSER_END(ParserShips)
+
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
+}
+
+TOKEN : /* OPERATORS */
+{
+  < SEMICOLON : ";" >
+| < COMMA : "," >
+| < DDOT : ":" >
+| < VERSION : "Version" >
+| < LANGUAGES : "Languages" >
+}
+
+TOKEN :
+{
+  < NUM : (< DIGIT >)+ | "-" (< DIGIT >)+ >
+| < ID : (< CHAR >) (< CHAR >)* >
+| < #DIGIT : [ "0"-"9" ] >
+| < #CHAR : ["a"-"z", "A"-"Z", "_", "-", "\u00C0"-"\u00FF"] >
+}
+
+void main() :{ List<Locale> languages; int version; Token t; }
+{
+  { languages = new ArrayList<Locale>();
+    version = 1; }  ( < VERSION > < DDOT > t = < NUM > < SEMICOLON > { version = Integer.parseInt(t.image); }
+  | < LANGUAGES > < DDOT > t = < ID > { languages.add(LanguageClass.getLocale(t.image)); }
+  	           ( < COMMA > t = < ID > { languages.add(LanguageClass.getLocale(t.image)); } )* < SEMICOLON >
+  )+
+  ( readShip(languages) )*
+  { return; }
+}
+
+void readShip(List<Locale> languages) :
+{ Token t; StringBuilder sb; List<Coordinate> parts; Map<String, String> names; int index; }{
+  { names = new TreeMap<String, String>(); index = 0; }
+    { sb = new StringBuilder(); }    ( ( t = < ID > | t = < NUM > ) { sb.append(t.image + " "); } )+
+    {      names.put(languages.get(index).getLanguage(), sb.toString().trim());
+      index++;
+    }
+  (
+    < COMMA >
+    { sb = new StringBuilder(); }
+    ( ( t = < ID > | t = < NUM > ) { sb.append(t.image + " "); } )+
+    {
+      names.put(languages.get(index).getLanguage(), sb.toString().trim());
+      index++;
+    }
+  )*
+  < SEMICOLON >
+  parts = readCoordinates()
+  {
+    if(!parts.isEmpty())
+      ShipClass.createNewShip(names, parts);
+  }}
+
+List<Coordinate > readCoordinates() :
+{ Token x, y; List<Coordinate> list; }
+{
+  { list = new ArrayList<Coordinate>(); }  ( x = < NUM > < COMMA > y = < NUM > { list.add(new Coordinate(Integer.parseInt(x.image), Integer.parseInt(y.image))); } )+
+  < SEMICOLON >
+  { return list; }	
+}

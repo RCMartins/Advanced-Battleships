@@ -1,0 +1,147 @@
+// <Lang1> , <Lang2> , ... , <LangN>
+
+English, Portuguese
+
+// <Code> : <Lang1> | <Lang2> | ... | <LangN>
+
+// <Menus>
+MainMenu				: Main Menu						| Menu Principal
+Tutorial				: Tutorial						| Tutorial
+SinglePlayer			: Single Player					| 1 Jogador
+MultiPlayer				: Multi Player					| 2 Jogadores
+Options					: Options						| Opções
+GameEditor				: Game Editor					| Editor Jogo
+Exit					: Exit							| Sair
+SinglePlayerChallenges	: Challenges					| Desafios
+PlayerVsPC				: Player Versus PC				| Jogar Contra o PC
+PlayerVsPlayerSamePC	: Same PC						| No Mesmo PC
+PlayerVsPlayerNetwork	: Network						| Em Rede
+TutorialIntroduction	: Introduction					| Introdução
+TutorialTipsAndTricks	: Tips & Tricks					| Dicas & Truques
+ChallengesPuzzles		: Puzzles						| Puzzles
+ChallengesHiscores		: Hiscores						| Recordes
+ManageShips				: Manage Ships					| Gerir Barcos
+ManageFleets			: Manage Fleets					| Gerir Frotas
+ManageGameModes			: Manage Game Modes				| Gerir Modos de Jogo
+WaitingPlayer1			: Wait For IP					| Esperar Pelo IP
+InitializingNetwork		: Enter IP						| Introduzir IP
+SelectingFleet			: Selecting Fleet				| Seleccionar Frota
+SelectingGameMode		: Selecting Game Mode			| Seleccionar Modo De Jogo
+SelectingGameSettings	: Match Settings				| Configurações da Partida
+PlacingShips			: Playing Ships					| Posicionar Barcos 
+Playing					: Playing						| A Jogar 
+PlayingInPause			: Playing - In Pause			| A Jogar - Em Pausa 
+FinishedGame			: Finished Game					| Jogo Acabado 
+FinishedGameStatistics	: Finished Game - Statistics	| Jogo Acabado - Estatísticas
+
+BackToMainMenu 			: Back To Main Menu 			| Voltar ao Menu Principal
+BackMenuShort			: Back 							| Voltar
+ExitGame				: Exit Game						| Sair do Jogo
+PlayString				: Play							| Jogar
+SendIPString			: Send 							| Enviar
+WriteIP					: Enter IP and click send:		| Introduza o IP e depois carrege enviar:
+WaitForIPString			: Waiting for player 1 to make connection | A esperar que o jogador 1 faça ligação
+ConnectionDone			: Connection Done!				| Ligação feita!
+WaitForPlayer1String	: Waiting for player 1 to choose a Fleet and a Game Mode | A esperar que o jogador 1 escolha a frota e o modo de jogo
+
+// <GameModes>
+GameMode				: Game Mode						| Modo de Jogo
+Classic					: Classic						| Clássico
+NDelay					: N-Delay						| Atraso-N
+
+// <Ships Extra Info>
+ShipsExtraInfo			: Ships Extra Info				| Opções Extra dos Barcos
+Shield					: Shiled						| Escudo
+FullShield				: Full Range Shield				| Escudo de Longo Alcance
+GlobalFullShield		: Global Permanent Shield		| Escudo Global Permanente
+Explosive				: Explosive						| Explosivo
+
+// <GameBonus>
+ExtraTurn				: Extra Turn					| Turno Extra
+Explosion				: Explosion						| Explosão
+ExtraTimeBonus			: Extra Time					| Tempo Extra
+GainBonusFormatYou		: You Received an				| Ganhaste um
+GainBonusFormatEnemy	: The Opponent Received an		| O Adversário Ganhou um
+
+// <Game Settings>
+ChangeFleet				: Change Fleet					| Mudar de Frota
+ChangeGameMode			: Change Game Mode				| Mudar de Modo de Jogo
+LaunchGame				: Launch Game!					| Começar Jogo
+
+// <Choose Fleet>
+BoardSize				: Board Size					| Tamanho do Tabuleiro
+AcceptFleet				: Choose Fleet					| Escolher Frota
+CreateNewFleet			: Create New Fleet				| Criar nova frota
+
+// <Choose GameMode>
+ShotsPerTurn			: Shots Per Turn				| Tiros Por Jogada
+BonusGainInGame			: Bonus that can be earn during game | Bonus que se pode ganhar ao longo do jogo
+
+// <Placing Ships>
+PlayerReady				: Player %d Ready				| Jogador %d Pronto
+PlayerReadyShort		: Ready / Not Ready				| Pronto / Não Pronto
+PlaceSelectedShipRandom : Place Ship Random				| Colocar Barco Numa Posição Aleatória
+PlaceShipsRandom		: Place All Ships In Random Positions | Colocar Todos Os Barcos Em Posições Aleatórias 
+RemoveLastShip			: Remove Last Ship				| Remover Último Barco
+RemoveAllShips			: Remove All Ships				| Remover Todos Os Barcos
+
+// <Playing>
+Player					: Player						| Jogador
+OtherPlayer				: Other Player					| Outro Jogador
+YourTurn				: It's your turn				| É a sua vez de jogar
+WaitForYourTurn			: Wait for your turn			| Espere pela sua vez de jogar
+ReadyToShoot			: Ready to shoot				| Pronto a disparar
+WinGame 				: Winner!						| Ganhou o Jogo!
+LoseGame				: Losser!						| Perdeu o Jogo!
+GameStatistics			: Game Statistics				| Estatísticas do Jogo
+DestroyedShips			: Opponent Ships				| Barcos do Adversário
+Water					: Water							| Água
+PausedGame				: Paused Game					| Jogo em Pausa
+PauseShort				: Pause Game					| Colocar Em Pausa
+UnPauseShort			: Continue Game					| Continuar Jogo
+ShootAll				: Shoot							| Disparar
+HideUnHideGame			: Hide/Unhide Game				| Esconder/Mostrar Jogo
+RestartGame				: Restart Game					| Recomeçar Jogo
+NewMessage				: New							| Novas
+OldMessage				: Old							| Antigas
+
+// <Time Related>
+Title					: Battle Ships (Version: %s)	| Batalha Naval (Versão: %s)
+Me						: Me							| Eu
+Opponent				: Opponent						| Adversário
+TimeLimit				: Time Limit					| Tempo Limite
+GameTime				: Game Time						| Tempo de Jogo
+WithoutTimeLimit		: Unlimited						| Ilimitado
+TurnTime				: Turn Time						| Tempo Turno
+TurnTimeShort			: Turn							| Turno
+TimeLeft				: Time Left						| Tempo Restante
+TimeLeftShort			: Left							| Restante
+UnlimitedTimeShort		: Unlimited						| Ilimitado
+TimeLimit				: Time Limit					| Tempo Limite
+TimeLimitPerPlayer		: Time Limit Per Player			| Tempo Limite Por Jogador
+TotalSeconds			: Total Seconds					| Segundos Totais
+SecondsPerTurn			: Seconds Per Turn				| Segundos Por Turno
+InititalTurnTime		: Initial Turn Time				| Tempo Por Turno Iniciais
+ExtraSecondsPerTurn		: Extra Seconds Per Turn		| Segundos Extra Por Turno
+TimeLimitType			: Time Limit Type				| Tipo de Limite de Tempo 
+PercentageTimeGain		: Percentage Of Time Gain Per Turn | Percentagem de Tempo Ganho por Turno
+
+// <Right Click Menu>
+RCMenuWater				: Water							| Água
+RCMenuMaybeWater		: Maybe Water					| Talvez Água
+RCMenuShip				: Ship							| Barco
+RCMenuMaybeShip			: Maybe Ship					| Talvez Barco
+RCMenuWaterFill			: Water Fill					| Encher com Água
+RCMenuUnMark			: Remove Mark					| Remover Marca
+
+// <Statistics>
+Score					: Score							| Pontuação
+TotalShootsFired		: Shoots Fired					| Total de tiros disparados
+TotalShootsHitted		: Shoots Hitted					| Total de tiros acertados
+Accuracy				: Accuracy						| Pontaria
+MedianTimePerTurn		: Median Time per Turn			| Média de tempo por turno
+
+// <Messages>
+Delay					: Delay							| Atraso
+SkippedMessages			: Skipped Messages 				| Mensagens Escondidas
+				

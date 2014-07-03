@@ -1,0 +1,4 @@
+// en, pt
+Language: en-US
+// on, off
+Sound: on
