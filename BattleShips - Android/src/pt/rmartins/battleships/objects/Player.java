@@ -28,11 +28,6 @@ public interface Player {
 	public static final int GodlikeTurns = 9;
 	public static final int HolyShitTurns = 10; // (Beyond Godlike!)
 
-	public enum DisplayModes {
-		ShowDestroyedShipsField, ShowStatistics
-		// ShowPlayerBonus
-	}
-
 	public boolean canPlaceShip();
 
 	public void chooseTarget();
@@ -139,17 +134,11 @@ public interface Player {
 
 	public void clearWater();
 
-	// public void addPlayerBonus(GameBonus bonus, int quantity);
-
 	public void startWatch();
 
 	public long getWatchTime();
 
 	public void stopWatch();
-
-	public DisplayModes getExtraInfoDisplayMode();
-
-	public void nextDisplayMode();
 
 	public List<GameBonus> getBonusInNextTurn();
 
@@ -188,10 +177,8 @@ public interface Player {
 	 */
 	public int getRemainingSpotsLeft();
 
-	// public void setNetworkExplosion(List<Coordinate> explodeCoordinates);
-
 	public void checkForExplosions();
 
-	// public int getExplosionCount();
+	public Game getGame();
 
 }

@@ -27,7 +27,7 @@ public class ComputerAI extends PlayerClass {
 
 	private static final String TAG = ComputerAI.class.getSimpleName();
 
-	public static final boolean ACTIVATE_DEBUG_AI = true;
+	public static final boolean ACTIVATE_DEBUG_AI = false;
 
 	public static final boolean DEBUG_AI_SHOW_SCREEN = ACTIVATE_DEBUG_AI && true;
 	public static final boolean DEBUG_AI = ACTIVATE_DEBUG_AI && DEBUG_AI_SHOW_SCREEN && true;
@@ -36,7 +36,6 @@ public class ComputerAI extends PlayerClass {
 
 	private final List<ShipComputer> searchShips;
 	private final LinkedList<MessageAI> searchMessages;
-	private final String lastMessageId;
 	public final int[] shipCount;
 	private boolean shipsLeftToFind;
 
@@ -87,25 +86,9 @@ public class ComputerAI extends PlayerClass {
 
 		searchShips = new ArrayList<ShipComputer>();
 		searchMessages = new LinkedList<MessageAI>();
-		lastMessageId = "";
 		shipsLeftToFind = true;
 		clearShots = new ArrayList<CoordinateValue>(maxX * maxY);
 		markWaterList = new ArrayList<Coordinate>();
-
-		//		if (DEBUG_AI_END_GAME) {
-		//			List<MessageUnit> messageTokens = new ArrayList<Message.MessageUnit>();
-		//			messageTokens.add(new MessageUnit(TypesMessageUnits.Water, ""));
-		//			messageTokens.add(new MessageUnit(TypesMessageUnits.Water, ""));
-		//			messageTokens.add(new MessageUnit(TypesMessageUnits.Water, ""));
-		//			List<Coordinate> coors = new ArrayList<Coordinate>();
-		//			coors.add(new Coordinate(0, 1));
-		//			coors.add(new Coordinate(2, 0));
-		//			coors.add(new Coordinate(2, 2));
-		//			addMessage(new Message("", 1, messageTokens, coors, new ArrayList<Coordinate>(), false));
-		//			setMarkAt(0, 1, Mark.Water);
-		//			setMarkAt(2, 0, Mark.Water);
-		//			setMarkAt(2, 2, Mark.Water);
-		//		}
 	}
 
 	public void initialize(List<Ship> shipsToPlace) {
@@ -274,6 +257,8 @@ public class ComputerAI extends PlayerClass {
 			System.out.println("Shooting at random locations...");
 
 			synchronized (game) {
+				turnTargetsLockWrite.lock();
+
 				int shotsLeft = size - shots.size();
 
 				fors: for (int y = 0; y < maxY; y++) {
@@ -289,6 +274,7 @@ public class ComputerAI extends PlayerClass {
 						}
 					}
 				}
+				turnTargetsLockWrite.unlock();
 
 				shotAll();
 			}

@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.Game.Mark;
 import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.objects.Message;
@@ -48,10 +49,16 @@ public class ShipComputer extends ShipClass {
 	private final List<Ship> allPlaces, unmodifiableAllPlaces;
 	private boolean isDestroyed;
 	private ComputerAI comp;
-	private int maxX, maxY;
+	private final int maxX;
+
+	private final int maxY;
 
 	public ShipComputer(int id, ComputerAI comp) {
 		super(id, 0, new Coordinate(0, 0));
+
+		final Game game = comp.getGame();
+		maxX = game.getMaxX();
+		maxY = game.getMaxY();
 
 		allPlaces = new LinkedList<Ship>(ShipClass.createAllFieldPossibilities(id, maxX, maxY));
 		unmodifiableAllPlaces = Collections.unmodifiableList(allPlaces);

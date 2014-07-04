@@ -75,7 +75,7 @@ public final class DataLoader {
 	 * @param gameModes
 	 */
 	public static void loadGameModes(List<GameMode> gameModes) {
-		final List<String> input = DataLoader.getClearText(R.raw.gamemodes_new);
+		final List<String> input = DataLoader.getClearText(R.raw.data__gamemodes_new);
 		if (input == null || input.isEmpty())
 			return;
 		gameModes.addAll(ParserGameModes.parseGameModes(listToString(input)));

@@ -69,7 +69,6 @@ public class PlayerClass implements Player {
 	protected StatisticsClass statistics;
 	protected List<Ship> lastTurnKilledShips;
 	protected final StopWatch timeOfPlayer;
-	protected int selectedDisplayMode;
 	protected final boolean playingFirst;
 	private int killingTurns;
 
@@ -126,7 +125,6 @@ public class PlayerClass implements Player {
 		totalKilledShips = 0;
 		extraTurns = explosionTurns = 0;
 		shipFieldVisible = true;
-		selectedDisplayMode = 0;
 
 		shipsLeftToPlace = new ArrayList<Ship>(shipsToPlace.size());
 		for (final Ship ship : shipsToPlace) {
@@ -1248,42 +1246,6 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public DisplayModes getExtraInfoDisplayMode() {
-		return Player.DisplayModes.values()[selectedDisplayMode];
-	}
-
-	@Override
-	public void nextDisplayMode() {
-		selectedDisplayMode = (selectedDisplayMode + 1) % Player.DisplayModes.values().length;
-
-		// if (getExtraInfoDisplayMode() == DisplayModes.ShowPlayerBonus && playerBonus.entrySet().size() == 0) {
-		// nextDisplayMode();
-		// }
-	}
-
-	// protected boolean useBonus(GameBonus gameBonus) {
-	// switch (gameBonus.getType()) {
-	// // case ExtraShot:
-	// // GameBonus.ExtraShot extraShot = (GameBonus.ExtraShot) gameBonus;
-	// //
-	// // extraShot.
-	// //
-	// // break;
-	// case ExtraTurn:
-	// // break;
-	// // case ShotSheild:
-	// // // break;
-	// // case ShipSheild:
-	// bonusInNextTurn.add(gameBonus);
-	// break;
-	// default:
-	// break;
-	// }
-	//
-	// return true;
-	// }
-
-	@Override
 	public List<GameBonus> getBonusInNextTurn() {
 		return Collections.unmodifiableList(bonusInNextTurn);
 	}
@@ -1428,6 +1390,11 @@ public class PlayerClass implements Player {
 	@Override
 	public void continueWatch() {
 		timeOfPlayer.continueWatch();
+	}
+
+	@Override
+	public Game getGame() {
+		return game;
 	}
 
 	// ############################################################################################
