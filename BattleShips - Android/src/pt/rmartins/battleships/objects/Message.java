@@ -6,8 +6,6 @@ import pt.rmartins.battleships.objects.Message.MessageUnit.TypesMessageUnits;
 
 public class Message {
 
-	//TODO: delete all string stuff?? or leave it for toString() debug?
-
 	public static class MessageUnit implements Comparable<MessageUnit> {
 		@Override
 		public String toString() {
@@ -24,7 +22,7 @@ public class Message {
 
 		public MessageUnit(TypesMessageUnits type, String text) {
 			this.text = text;
-			this.type = type; // TypesMessageUnits.Water;
+			this.type = type;
 			this.shipId = -1;
 		}
 
@@ -34,75 +32,41 @@ public class Message {
 			this.shipId = shipId;
 		}
 
-		// public String getText() {
-		// return text;
-		// }
-
 		public String getShipName() {
 			return ShipClass.getName(shipId);
 		}
-
-		// public TypesMessageUnits getType() {
-		// return type;
-		// }
 
 		@Override
 		public int compareTo(MessageUnit other) {
 			final int ord = this.type.ordinal() - other.type.ordinal();
 			return ord != 0 ? ord : this.shipId - other.shipId;
 		}
-
-		// public int getShipId() {
-		// return shipId;
-		// }
 	}
 
-	private String message;
-	private final List<MessageUnit> parts;
-	private final List<Coordinate> coors;
-	private final List<Coordinate> counterCoors;
+	protected final List<MessageUnit> messageTokens;
+	protected final List<Coordinate> coors;
+	protected final List<Coordinate> counters;
 
 	private int totalHits;
 	private final int[] hits;
-	private final String turnType;
-	private final int turnNumber;
+	protected final String turnType;
+	protected final int turnNumber;
 	private boolean hasSomeWater;
 	private boolean isAllWater;
 	private int kills;
-	private final boolean wasFirstBlood;
+	protected final boolean wasFirstBlood;
 
 	public Message(String turnType, int turnNumber, List<MessageUnit> messageTokens, List<Coordinate> coors,
 			List<Coordinate> counters, boolean wasFirstBlood) {
 		this.turnType = turnType;
 		this.turnNumber = turnNumber;
-		this.parts = messageTokens;
-		this.coors = coors;// == null ? null : coors; //Collections.unmodifiableList(coors);
-		this.counterCoors = counters;// == null ? null : counters //;Collections.unmodifiableList(counters);
-		this.message = null;
+		this.messageTokens = messageTokens;
+		this.coors = coors;
+		this.counters = counters;
 		this.hits = new int[ShipClass.numberOfShips()];
 		this.wasFirstBlood = wasFirstBlood;
 		if (turnNumber != 0)
-			calculate();
-	}
-
-	// public Message(Message messageToCopy) {
-	// this.turnType = messageToCopy.turnType;
-	// this.turnNumber = messageToCopy.turnNumber;
-	// this.parts = new ArrayList<MessageUnit>(messageToCopy.parts);
-	// this.coors = Collections.unmodifiableList(new ArrayList<Coordinate>(messageToCopy.coors));
-	// this.counterCoors = Collections.unmodifiableList(new ArrayList<Coordinate>(messageToCopy.counterCoors));
-	// this.message = messageToCopy.message;
-	// this.hits = new int[ShipClass.numberOfShips()];
-	// calculate();
-	// }
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof Message) {
-			final Message o = (Message) obj;
-			return getMessage().equals(o.getMessage());
-		}
-		return false;
+			updateStats();
 	}
 
 	public int getHits() {
@@ -113,16 +77,11 @@ public class Message {
 		return hits[shipId];
 	}
 
-	public String getMessage() {
-		return message;
-	}
-
 	public List<MessageUnit> getParts() {
-		return parts; // Collections.unmodifiableList(parts);
+		return messageTokens;
 	}
 
-	private void calculate() {
-		message = "";
+	protected void updateStats() {
 		totalHits = 0;
 
 		for (int i = 0; i < ShipClass.numberOfShips(); i++) {
@@ -132,56 +91,29 @@ public class Message {
 		hasSomeWater = false;
 		isAllWater = true;
 		kills = 0;
-		if (parts == null) {
-			message = "";
-		} else {
-			for (final MessageUnit token : parts) {
-				if (token.type == TypesMessageUnits.Water || token.type == TypesMessageUnits.Counter) {
-					message += "; " + token;
-				} else {
-					message = token + "; " + message;
+		if (messageTokens != null) {
+			for (final MessageUnit token : messageTokens) {
+				if (token.type != TypesMessageUnits.Water && token.type != TypesMessageUnits.Counter) {
 					totalHits++;
 					hits[token.shipId]++;
 				}
 			}
 
-			message = message.replace("; ;", ";").replace("  ", " ").trim();
-			if (message.startsWith(";")) {
-				message = message.substring(1).trim();
-			}
-			message = (message + ".").replace(";.", ".").replace("!.", "!");
-
-			if (!counterCoors.isEmpty()) {
-				message += "Counters: ";
-				for (Coordinate coor : counterCoors) {
-					message += " " + coor.toStringSmall();
-				}
-			}
-
-			for (final MessageUnit token : parts) {
-				if (token.type == TypesMessageUnits.Water) {
-					hasSomeWater = true;
-					break;
-				}
-			}
-
-			for (final MessageUnit token : parts) {
-				if (token.type != TypesMessageUnits.Water) {
-					isAllWater = false;
-					break;
-				}
-			}
-
-			for (final MessageUnit token : parts)
+			for (final MessageUnit token : messageTokens) {
 				if (token.type == TypesMessageUnits.AKillerShot)
 					kills++;
-		}
 
+				if (token.type == TypesMessageUnits.Water)
+					hasSomeWater = true;
+				else
+					isAllWater = false;
+			}
+		}
 	}
 
 	@Override
 	public String toString() {
-		return getMessage();
+		return messageTokens + "" + counters;
 	}
 
 	public boolean hasSomeWater() {
@@ -217,7 +149,7 @@ public class Message {
 	}
 
 	public List<Coordinate> getCounter() {
-		return counterCoors;
+		return counters;
 	}
 
 	public boolean wasFirstBlood() {

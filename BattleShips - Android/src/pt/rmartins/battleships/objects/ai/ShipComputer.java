@@ -1,4 +1,4 @@
-package pt.rmartins.battleships.objects;
+package pt.rmartins.battleships.objects.ai;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,19 +6,24 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import pt.rmartins.battleships.objects.Coordinate;
 import pt.rmartins.battleships.objects.Game.Mark;
-import pt.rmartins.battleships.objects.ai.ComputerAI;
+import pt.rmartins.battleships.objects.GameClass;
+import pt.rmartins.battleships.objects.Message;
+import pt.rmartins.battleships.objects.Ship;
+import pt.rmartins.battleships.objects.ShipClass;
 import pt.rmartins.battleships.objects.ai.ComputerAI.CoordinateValue;
-import android.util.Pair;
+import pt.rmartins.battleships.utilities.MyPair;
 
 public class ShipComputer extends ShipClass {
 
+	@SuppressWarnings("unused")
 	private static final String TAG = ShipComputer.class.getSimpleName();
 
 	@Override
 	public String toString() {
-		return super.toString() + "[possible=" + possibleSpots + ", known=" + knownSpots + ", searchStatus="
-				+ searchStatus + ", isDestroyed=" + isDestroyed + "]";
+		return super.toString() + "[possible=" + possibleSpots + ", known=" + knownSpots + ", search=" + searchStatus
+				+ ", destroyed=" + isDestroyed + "]";
 	}
 
 	public enum SearchStatus {
@@ -39,17 +44,15 @@ public class ShipComputer extends ShipClass {
 	private SearchStatus searchStatus;
 
 	private List<Coordinate> knownSpots;
-	private List<Pair<Message, Boolean>> possibleSpots;
+	private List<MyPair<MessageAI, Boolean>> possibleSpots;
 	private final List<Ship> allPlaces, unmodifiableAllPlaces;
 	private boolean isDestroyed;
 	private ComputerAI comp;
+	private int maxX, maxY;
 
 	public ShipComputer(int id, ComputerAI comp) {
 		super(id, 0, new Coordinate(0, 0));
 
-		final int maxX = comp.game.getMaxX();
-		final int maxY = comp.game.getMaxY();
-		//		allPlaces = ShipClass.createAllFieldPossibilities(id, maxX, maxY);
 		allPlaces = new LinkedList<Ship>(ShipClass.createAllFieldPossibilities(id, maxX, maxY));
 		unmodifiableAllPlaces = Collections.unmodifiableList(allPlaces);
 
@@ -60,7 +63,7 @@ public class ShipComputer extends ShipClass {
 		this.comp = comp;
 		this.searchStatus = searchStatus;
 		this.knownSpots = new ArrayList<Coordinate>();
-		this.possibleSpots = new ArrayList<Pair<Message, Boolean>>();
+		this.possibleSpots = new ArrayList<MyPair<MessageAI, Boolean>>();
 		this.isDestroyed = false;
 	}
 
@@ -81,6 +84,9 @@ public class ShipComputer extends ShipClass {
 				this.y = ship.minY();
 				tick++; // So that the pieces list is updated
 				searchStatus = SearchStatus.All;
+				for (MyPair<MessageAI, Boolean> pair : possibleSpots) {
+					comp.updateMessageShips(pair, this);
+				}
 				possibleSpots.clear();
 				knownSpots.clear();
 				markShip();
@@ -97,18 +103,6 @@ public class ShipComputer extends ShipClass {
 		}
 	}
 
-	public boolean addKnownSpots(Iterable<Coordinate> coors) {
-		for (final Coordinate coor : coors) {
-			if (isAValidKnownSpot(coor)) {
-				knownSpots.add(coor);
-			} else {
-				return false;
-			}
-		}
-		update();
-		return true;
-	}
-
 	public boolean addKnownSpot(Coordinate coor) {
 		if (isAValidKnownSpot(coor)) {
 			knownSpots.add(coor);
@@ -118,19 +112,24 @@ public class ShipComputer extends ShipClass {
 		return false;
 	}
 
-	public boolean addPossibleSpot(Message message, boolean killShot) {
-		if (isAValidPossibleSpot(message, killShot)) {
-			possibleSpots.add(new Pair<Message, Boolean>(message, killShot));
-			update();
-			return true;
+	public boolean addPossibleSpot(MessageAI message, boolean killShot) {
+		if (message.getParts().size() == 1) {
+			return addKnownSpot(message.getCoors().get(0));
+		} else {
+			if (isAValidPossibleSpot(message, killShot)) {
+				//				message.addShipWithMessage(this);
+				possibleSpots.add(new MyPair<MessageAI, Boolean>(new MessageAI(message), killShot));
+				update();
+				return true;
+			}
+			return false;
 		}
-		return false;
 	}
 
-	public boolean removePossibleSpot(Message message, boolean killShot) {
+	public boolean removePossibleSpot(MessageAI message, boolean killShot) {
 		for (int i = 0; i < possibleSpots.size(); i++) {
-			final Pair<Message, Boolean> pair = possibleSpots.get(i);
-			if (pair.first == message && pair.second == killShot) {
+			final MyPair<MessageAI, Boolean> pair = possibleSpots.get(i);
+			if (pair.first.getTurnId().equals(message.getTurnId()) && pair.second == killShot) {
 				possibleSpots.remove(i);
 				update();
 				return true;
@@ -152,18 +151,15 @@ public class ShipComputer extends ShipClass {
 		if (knownSpots.contains(coor))
 			return false;
 
-		final List<Ship> list = getAllPlaces();
-		if (list.isEmpty())
-			return true;
-
-		for (final Ship ship : list) {
+		final List<Ship> allPlaces = getAllPlaces();
+		for (final Ship ship : allPlaces) {
 			if (ship.pieceAt(coor))
 				return true;
 		}
 		return false;
 	}
 
-	public boolean isAValidPossibleSpot(Message message, boolean killShot) {
+	public boolean isAValidPossibleSpot(MessageAI message, boolean killShot) {
 		if (searchStatus == SearchStatus.All)
 			return false;
 		if (killShot && !canBeDestroyed(message))
@@ -177,7 +173,7 @@ public class ShipComputer extends ShipClass {
 		if (list != null && !list.isEmpty()) {
 			for (final Ship ship : list) {
 				int nHits = message.getHits(ship.getId());
-				for (final Pair<Message, Boolean> pair : possibleSpots) {
+				for (final MyPair<MessageAI, Boolean> pair : possibleSpots) {
 					if (pair.first == message) {
 						nHits--;
 					}
@@ -191,7 +187,7 @@ public class ShipComputer extends ShipClass {
 		return true;
 	}
 
-	private boolean multipleMessageHits(Message m, Ship ship, int hits, int index) {
+	private boolean multipleMessageHits(MessageAI m, Ship ship, int hits, int index) {
 		if (hits == 0)
 			return true;
 
@@ -311,7 +307,7 @@ public class ShipComputer extends ShipClass {
 
 		if (possibleSpots.size() > 1) {
 			for (int i = 1; i < possibleSpots.size(); i++) {
-				Pair<Message, Boolean> pair = possibleSpots.get(i);
+				MyPair<MessageAI, Boolean> pair = possibleSpots.get(i);
 				message = pair.first;
 				hits = message.getHits(id);
 				misses = message.getMisses();
@@ -360,8 +356,6 @@ public class ShipComputer extends ShipClass {
 	}
 
 	public List<Coordinate> getMostProbablePlaces(int howManyMax) { // TODO: AI melhorar algoritmo
-		final int maxX = comp.game.getMaxX();
-		final int maxY = comp.game.getMaxY();
 		final List<Ship> allPlaces = getAllPlaces();
 		final int[][] field = new int[maxX][maxY];
 		for (final Ship ship : allPlaces) {
@@ -374,7 +368,8 @@ public class ShipComputer extends ShipClass {
 		final List<CoordinateValue> listValues = new ArrayList<CoordinateValue>();
 		for (int x = 0; x < maxX; x++) {
 			for (int y = 0; y < maxY; y++) {
-				listValues.add(new CoordinateValue(x, y, field[x][y]));
+				if (field[x][y] > 0)
+					listValues.add(new CoordinateValue(x, y, field[x][y]));
 			}
 		}
 
@@ -383,7 +378,7 @@ public class ShipComputer extends ShipClass {
 		Collections.reverse(listValues);
 
 		final List<Coordinate> listResult = new ArrayList<Coordinate>(howManyMax);
-		for (int i = 0; i < howManyMax && i < listValues.size() && listValues.get(i).value > 0; i++) {
+		for (int i = 0; i < howManyMax && i < listValues.size(); i++) {
 			listResult.add(listValues.get(i));
 		}
 
@@ -452,20 +447,20 @@ public class ShipComputer extends ShipClass {
 		return false;
 	}
 
-	public boolean hasAnyMessage(Message other) {
-		for (final Pair<Message, Boolean> pair : possibleSpots) {
-			if (pair.first == other) {
-				return true;
+	public MyPair<MessageAI, Boolean> hasAnyMessage(MessageAI other) {
+		for (final MyPair<MessageAI, Boolean> pair : possibleSpots) {
+			if (pair.first.getTurnId().equals(other.getTurnId())) {
+				return pair;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	public boolean isAKnownSpot(Coordinate coor) {
 		return knownSpots.contains(coor);
 	}
 
-	public List<Pair<Message, Boolean>> getPossibleSpotsMessages() {
+	public List<MyPair<MessageAI, Boolean>> getPossibleSpotsMessages() {
 		return possibleSpots;
 	}
 

@@ -4,22 +4,11 @@ import java.util.List;
 
 public interface Ship extends Iterable<Coordinate> {
 
-	// public void centerShip(int maxX, int maxY);
-
 	public int getId();
 
 	public int getRotation();
 
 	public String getName();
-
-	// // /**
-	// // * Return a copy of the list of the ship coordinates
-	// // *
-	// // * @return the list
-	// // */
-	// // public List<Coordinate> getShipParts();
-	//
-	// public boolean isInsideField(Game game);
 
 	/**
 	 * Coordinate with larger x
@@ -88,6 +77,7 @@ public interface Ship extends Iterable<Coordinate> {
 
 	public Coordinate trimShip(int maxX, int maxY);
 
+	@Override
 	public boolean equals(Object other);
 
 	/**
@@ -97,7 +87,7 @@ public interface Ship extends Iterable<Coordinate> {
 	 */
 	public boolean equalsIRXY(Ship other);
 
-	List<Coordinate> getListPieces();
+	public List<Coordinate> getListPieces();
 
 	public boolean isSunk(Player player);
 

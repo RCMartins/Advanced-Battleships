@@ -282,7 +282,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 	private static final long TIME_SWIPE_THRESHOLD = 600;
 	private final float SWIPE_X_THRESHOLD;
 
-	private static final long TIME_MARKS_POPUP = 300;
+	private static final long TIME_MARKS_POPUP = 200;
 	private static final double SHOOTING_ANIMATION_TIME = 3.4;
 	private static final double SHOOTING_PULSE_TICK_TIME = 0.1;
 	private static double shootingPulseTime;

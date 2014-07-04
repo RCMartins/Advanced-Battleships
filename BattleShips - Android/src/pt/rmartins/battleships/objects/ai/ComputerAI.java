@@ -18,11 +18,10 @@ import pt.rmartins.battleships.objects.Message.MessageUnit.TypesMessageUnits;
 import pt.rmartins.battleships.objects.PlayerClass;
 import pt.rmartins.battleships.objects.Ship;
 import pt.rmartins.battleships.objects.ShipClass;
-import pt.rmartins.battleships.objects.ShipComputer;
-import pt.rmartins.battleships.objects.ShipComputer.SearchStatus;
+import pt.rmartins.battleships.objects.ai.ShipComputer.SearchStatus;
 import pt.rmartins.battleships.objects.modes.GameMode;
+import pt.rmartins.battleships.utilities.MyPair;
 import android.util.Log;
-import android.util.Pair;
 
 public class ComputerAI extends PlayerClass {
 
@@ -36,6 +35,8 @@ public class ComputerAI extends PlayerClass {
 	public static final boolean SHOW_MASSIVE_LOGS = Game.DEVELOPER_MODE && false;
 
 	private final List<ShipComputer> searchShips;
+	private final LinkedList<MessageAI> searchMessages;
+	private final String lastMessageId;
 	public final int[] shipCount;
 	private boolean shipsLeftToFind;
 
@@ -73,8 +74,6 @@ public class ComputerAI extends PlayerClass {
 	 * shots fired.
 	 */
 	private final List<CoordinateValue> clearShots;
-	private final List<Coordinate> possibleShots;
-
 	public final List<Coordinate> markWaterList;
 
 	public ComputerAI(String name, List<Ship> shipsToPlace, GameMode mode, GameClass game, boolean isPlayer1,
@@ -87,12 +86,10 @@ public class ComputerAI extends PlayerClass {
 		}
 
 		searchShips = new ArrayList<ShipComputer>();
-
+		searchMessages = new LinkedList<MessageAI>();
+		lastMessageId = "";
 		shipsLeftToFind = true;
-
 		clearShots = new ArrayList<CoordinateValue>(maxX * maxY);
-		possibleShots = new ArrayList<Coordinate>(maxX * maxY);
-
 		markWaterList = new ArrayList<Coordinate>();
 
 		//		if (DEBUG_AI_END_GAME) {
@@ -190,7 +187,6 @@ public class ComputerAI extends PlayerClass {
 				Coordinate coor = list.get(0);
 				if (!someKnowledgeSpots.contains(coor)) {
 					someKnowledgeSpots.add(coor);
-					break;
 				}
 			}
 		}
@@ -200,7 +196,6 @@ public class ComputerAI extends PlayerClass {
 			Log.i(TAG, "someKnowledgeSpots=" + someKnowledgeSpots);
 			Log.i(TAG, "searchShips=" + searchShips);
 			Log.i(TAG, "clearShots=" + clearShots);
-			Log.i(TAG, "possibleShots=" + possibleShots);
 			Log.i(TAG, "########################################################");
 		}
 
@@ -273,19 +268,16 @@ public class ComputerAI extends PlayerClass {
 				Log.i(TAG, "someKnowledgeSpots=" + someKnowledgeSpots);
 				Log.i(TAG, "searchShips=" + searchShips);
 				Log.i(TAG, "clearShots=" + clearShots);
-				Log.i(TAG, "possibleShots=" + possibleShots);
 				Log.i(TAG, "########################################################");
 			}
 
 			System.out.println("Shooting at random locations...");
 
 			synchronized (game) {
-				turnTargetsLockWrite.lock();
-
 				int shotsLeft = size - shots.size();
 
-				fors: for (int x = 0; x < maxX; x++) {
-					for (int y = 0; y < maxY; y++) {
+				fors: for (int y = 0; y < maxY; y++) {
+					for (int x = 0; x < maxX; x++) {
 						Coordinate newPosition = new Coordinate(x, y);
 						if (messageAt(x, y) == null && !shots.contains(newPosition)) {
 							setPosition(newPosition);
@@ -299,7 +291,6 @@ public class ComputerAI extends PlayerClass {
 				}
 
 				shotAll();
-				turnTargetsLockWrite.unlock();
 			}
 		}
 	}
@@ -389,18 +380,6 @@ public class ComputerAI extends PlayerClass {
 					}
 				}
 			} else if (searchStatus == SearchStatus.Some) {
-				//				for (final Coordinate coor : ship.getKnownPlaces()) {
-				//					field[coor.x][coor.y] += MAX_LIMIT;
-				//					for (int i = -1; i < 1; i++) {
-				//						for (int j = -1; j < 1; j++) {
-				//							final int x = coor.x + i;
-				//							final int y = coor.y + j;
-				//							if (game.isInsideField(x, y)) {
-				//								field[x][y] += 50;
-				//							}
-				//						}
-				//					}
-				//				}
 				final List<Ship> allPlaces = ship.getAllPlaces();
 				for (Iterator<Ship> iterator = allPlaces.iterator(); iterator.hasNext();) {
 					Ship possibility = iterator.next();
@@ -430,40 +409,28 @@ public class ComputerAI extends PlayerClass {
 		Collections.sort(clearShots);
 	}
 
-	private void generatePossibleShots(boolean shuffle) {
-		final boolean[][] field = new boolean[maxX][maxY];
-
-		for (int x = 0; x < maxX; x++) {
-			for (int y = 0; y < maxY; y++) {
-				field[x][y] = messageAt(x, y) == null && !markAt(x, y).isWater();
-			}
-		}
-
-		possibleShots.clear();
-		for (int x = 0; x < maxX; x++) {
-			for (int y = 0; y < maxY; y++) {
-				if (field[x][y])
-					possibleShots.add(new Coordinate(x, y));
-			}
-		}
-		if (shuffle)
-			Collections.shuffle(possibleShots, GameClass.random);
-	}
-
 	private void updateGameStatus() {
 		final long initialTime = System.currentTimeMillis();
 
-		messagesLockRead.lock();
-		final Message lastMessage = messages.isEmpty() ? null : messages.get(0);
-		messagesLockRead.unlock();
-
-		if (lastMessage == null)
-			return;
+		MessageAI lastMessage;
+		{
+			messagesLockRead.lock();
+			final Message last = messages.isEmpty() ? null : messages.get(0);
+			messagesLockRead.unlock();
+			if (last == null)
+				return;
+			else if (last.isAllWater())
+				lastMessage = null;
+			else
+				lastMessage = new MessageAI(last);
+		}
 
 		// TODO: AI fazer uma heuristica para que se uma jogada acertar em tudo e houver tiros "colados" ou seja dist
 		// x,y <= 1, não podem ser todos barcos diferentes senão estavam pegados uns aos outros
 
-		{
+		if (lastMessage != null) {
+			searchMessages.add(lastMessage);
+
 			final List<MessageUnit> parts = lastMessage.getParts();
 			boolean all1spaceKills = true;
 			int lastShipId = -1;
@@ -559,7 +526,8 @@ public class ComputerAI extends PlayerClass {
 							for (final ShipComputer ship : searchShips) {
 								if (ship.getId() == shipId && ship.getSearchStatus() == SearchStatus.Some
 										&& !ship.isDestroyed()) {
-									ship.addPossibleSpot(lastMessage, true);
+									if (ship.addPossibleSpot(lastMessage, true))
+										ship.setDestroyed();
 								}
 							}
 						}
@@ -610,133 +578,136 @@ public class ComputerAI extends PlayerClass {
 			}
 		}
 
-		synchronized (game) {
-			messagesLockRead.lock();
-			for (final Message message : messages) {
-				if (!message.isAllWater() && message.hasSomeWater()) {
-					// Verifica se alguma coordenada desta jogada é água, ou seja, é impossivel ser algum barco neste sitio,
-					// por exclusão de partes blabla
-					/**
-					 * Verify if the coordinates of the message are water or not??
-					 */
-					for (final Coordinate coor : message.getCoors()) {
-						if (markAt(coor) == Mark.None) {
-							boolean found = false;
-							found_label: for (final ShipComputer ship : searchShips) {
+		List<Coordinate> waterToRemoveList = new LinkedList<Coordinate>();
+		for (final MessageAI message : searchMessages) {
+			if (!message.isAllWater() && message.hasSomeWater()) {
+				/**
+				 * Verify if any of the coordinates of the message is water
+				 */
+				for (final Coordinate coor : message.getCoors()) {
+					if (markAt(coor) == Mark.None) {
+						found_label: {
+							for (final ShipComputer ship : searchShips) {
 								if (ship.getSearchStatus() == SearchStatus.Some) {
 									final List<Ship> allPlaces = ship.getAllPlaces();
 									for (final Ship possibility : allPlaces) {
 										if (possibility.getListPieces().contains(coor)) {
-											found = true;
 											break found_label;
 										}
 									}
 								} else if (ship.getSearchStatus() == SearchStatus.All) {
 									if (ship.pieceAt(coor)) {
-										found = true;
 										break found_label;
 									}
 								}
 							}
-							if (!found) {
-								if (!markAt(coor).isWater())
-									setMarkAt(coor, Mark.Water);
-								updatedSomething = true;
-							}
+							waterToRemoveList.add(coor);
 						}
 					}
+				}
 
-					{
+				{
+					/**
+					 * test if the unknown message coors are water:
+					 */
+					final List<Coordinate> unknownMCoorList = new ArrayList<Coordinate>();
+					int count = 0;
+					for (final Coordinate coor : message.getCoors()) {
+						if (markAt(coor).isWater()) {
+							count++;
+						} else if (!knownCoor(coor)) {
+							unknownMCoorList.add(coor);
+						}
+					}
+					if (count == message.getMisses() && !unknownMCoorList.isEmpty()) {
+						// <<< Here only the messages that all the water is known pass >>>
+
 						/**
-						 * test if the unknown message coors are water:
+						 * Marks remaining message coors with Mark.Ship
 						 */
-						final List<Coordinate> unknownMCoorList = new ArrayList<Coordinate>();
-						int count = 0;
-						for (final Coordinate coor : message.getCoors()) {
-							if (markAt(coor).isWater()) {
-								count++;
-							} else if (!knownCoor(coor)) {
-								unknownMCoorList.add(coor);
+						for (final Coordinate coor : unknownMCoorList) {
+							if (markAt(coor) == Mark.None) {
+								setMarkAt(coor, Mark.Ship);
+								updatedSomething = true;
+
+								/**
+								 * TODO: verifyif there is a ship there (of course there is!) <br>
+								 * and update it's postiion!!!!!!!!!!!
+								 */
 							}
 						}
-						if (count == message.getMisses()) {
-							// <<< Here only the messages that all the water is known pass >>>
 
-							/**
-							 * Marks remaining message coors with Mark.Ship
-							 */
-							for (final Coordinate coor : message.getCoors()) {
-								if (markAt(coor) == Mark.None) {
-									setMarkAt(coor, Mark.Ship);
-									updatedSomething = true;
-
-									/**
-									 * TODO: verifyif there is a ship there (of course there is!) <br>
-									 * and update it's postiion!!!!!!!!!!!
-									 */
-								}
-							}
-
-							/**
-							 * Try to update with the new info from the message
-							 */
-							for (final ShipComputer ship : searchShips) {
-								if (ship.getSearchStatus() == SearchStatus.Some && ship.hasAnyMessage(message)) {
+						/**
+						 * Try to update with the new info from the message
+						 */
+						for (final ShipComputer ship : searchShips) {
+							final MyPair<MessageAI, Boolean> pair = ship.hasAnyMessage(message);
+							if (ship.getSearchStatus() == SearchStatus.Some && pair != null) {
+								for (final Coordinate coor : unknownMCoorList) {
+									boolean coorOwner = true;
 									final List<Ship> allPlaces = ship.getAllPlaces();
-									for (final Coordinate coor : unknownMCoorList) {
-										boolean coorOwner = true;
-										for (final Ship possibility : allPlaces) {
-											if (!possibility.pieceAt(coor)) {
-												coorOwner = false;
-												break;
-											}
-										}
-
-										/**
-										 * coorOwner == true ==> that coor must belong to the ship
-										 */
-										if (coorOwner) {
-											ship.removePossibleSpot(message, false);
-											ship.addKnownSpot(coor);
-											if (markAt(coor) == Mark.None)
-												setMarkAt(coor, Mark.Ship);
-											updatedSomething = true;
+									for (final Ship possibility : allPlaces) {
+										if (!possibility.pieceAt(coor)) {
+											coorOwner = false;
+											break;
 										}
 									}
-								}
-							}
-						}
-					}
-					{
-						/**
-						 * try to find missing water
-						 */
-						final List<Coordinate> unknownMCoorList = new ArrayList<Coordinate>();
-						int count = 0;
-						for (final Coordinate coor : message.getCoors()) {
-							if (markAt(coor).isShip()) {
-								count++;
-							} else if (!knownCoor(coor)) {
-								unknownMCoorList.add(coor);
-							}
-						}
-						if (count == message.getHits()) {
-							// <<< Here only the messages that all the ships is known pass >>>
 
-							/**
-							 * Marks remaining message coors with Mark.Water
-							 */
-							for (final Coordinate coor : message.getCoors()) {
-								if (markAt(coor) == Mark.None) {
-									setMarkAt(coor, Mark.Water);
-									updatedSomething = true;
+									/**
+									 * coorOwner == true ==> that coor must belong to the ship
+									 */
+									if (coorOwner) {
+										ship.removePossibleSpot(pair.first, pair.second);
+										ship.addKnownSpot(coor);
+										if (markAt(coor) == Mark.None)
+											setMarkAt(coor, Mark.Ship);
+										updateMessageShips(pair, ship);
+										updatedSomething = true;
+									}
 								}
 							}
 						}
 					}
 				}
+				{
+					/**
+					 * try to find missing water
+					 */
+					final List<Coordinate> unknownMCoorList = new ArrayList<Coordinate>();
+					int count = 0;
+					for (final Coordinate coor : message.getCoors()) {
+						if (markAt(coor).isShip()) {
+							count++;
+						} else if (!knownCoor(coor) && markAt(coor) == Mark.None) {
+							unknownMCoorList.add(coor);
+						}
+					}
+					if (count == message.getHits() && !unknownMCoorList.isEmpty()) {
+						// <<< Here only the messages that all the ships is known pass >>>
+
+						/**
+						 * Marks remaining message coors with Mark.Water
+						 */
+						for (Coordinate coor : unknownMCoorList) {
+							waterToRemoveList.add(coor);
+						}
+					}
+				}
 			}
-			messagesLockRead.unlock();
+		}
+
+		if (!waterToRemoveList.isEmpty()) {
+			for (Coordinate coor : waterToRemoveList) {
+				setMarkAt(coor, Mark.Water);
+			}
+			updatedSomething = true;
+		}
+		for (Iterator<MessageAI> iterator = searchMessages.iterator(); iterator.hasNext();) {
+			MessageAI message = iterator.next();
+			if (message.getParts().isEmpty()) {
+				iterator.remove();
+				updatedSomething = true;
+			}
 		}
 
 		writeDebug(initialTime, DEBUG_INDEX++);
@@ -748,8 +719,8 @@ public class ComputerAI extends PlayerClass {
 		// TODO: AI melhorar para também funcionar quando existem vários barcos do mesmo tipo
 		for (final ShipComputer ship : searchShips) {
 			if (ship.getSearchStatus() == SearchStatus.Some) {
-				final List<Pair<Message, Boolean>> removeList = new ArrayList<Pair<Message, Boolean>>();
-				for (final Pair<Message, Boolean> pair : ship.getPossibleSpotsMessages()) {
+				final List<MyPair<MessageAI, Boolean>> removeList = new ArrayList<MyPair<MessageAI, Boolean>>();
+				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
 					final Message m = pair.first;
 					int equalCount = -1;
 					List<Coordinate> equalList = new ArrayList<Coordinate>();
@@ -773,18 +744,22 @@ public class ComputerAI extends PlayerClass {
 								break;
 							}
 						}
-					}// TODO: AI testar isto
+					}
+					// TODO: AI testar isto
 					if (allEqual && !equalList.isEmpty()) {
 						removeList.add(pair);
-						ship.addKnownSpots(equalList);
+						for (Coordinate coor : equalList) {
+							ship.addKnownSpot(coor);
+						}
 						for (Coordinate coor : equalList) {
 							if (markAt(coor) == Mark.None)
 								setMarkAt(coor, Mark.Ship);
 						}
+						updateMessageShips(pair, ship);
 						updatedSomething = true;
 					}
 				}
-				for (final Pair<Message, Boolean> pair : removeList) {
+				for (final MyPair<MessageAI, Boolean> pair : removeList) {
 					ship.removePossibleSpot(pair.first, pair.second);
 				}
 			}
@@ -794,33 +769,34 @@ public class ComputerAI extends PlayerClass {
 
 		/**
 		 * NEW STUFF :D
+		 * 
+		 * If all-1 coors in a message are known then the remaining coordinate is also a known coor
 		 */
 		for (final ShipComputer ship : searchShips) {
 			if (ship.getSearchStatus() == SearchStatus.Some) {
-				final List<Pair<Message, Boolean>> removeList = new ArrayList<Pair<Message, Boolean>>();
+				final List<MyPair<MessageAI, Boolean>> removeList = new ArrayList<MyPair<MessageAI, Boolean>>();
 				if (ship.getNumberPieces() == 1) {
-					for (final Pair<Message, Boolean> pair : ship.getPossibleSpotsMessages()) {
-						final Message message = pair.first;
-						final List<Coordinate> coorsCopy = new LinkedList<Coordinate>(message.getCoors());
-						int nKnownCoors = 0;
-						for (Iterator<Coordinate> coors = coorsCopy.iterator(); coors.hasNext();) {
-							Coordinate coor = coors.next();
-							if (knownCoor(coor)) {
-								nKnownCoors++;
-								coors.remove();
-							}
+					for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
+						final MessageAI message = pair.first;
+						final List<Coordinate> coors = message.getCoors();
+						final List<Coordinate> coorsCopy = new LinkedList<Coordinate>(coors);
+						for (Iterator<Coordinate> iterator = coorsCopy.iterator(); iterator.hasNext();) {
+							Coordinate coor = iterator.next();
+							if (knownCoor(coor))
+								iterator.remove();
 						}
-						if (nKnownCoors == coorsCopy.size() - 1) {
+						if (coorsCopy.size() == 1) {
 							removeList.add(pair);
 							final Coordinate coor = coorsCopy.get(0);
 							ship.addKnownSpot(coor);
 							if (markAt(coor) == Mark.None)
 								setMarkAt(coor, Mark.Ship);
+							updateMessageShips(pair, ship);
 							updatedSomething = true;
 						}
 					}
 				}
-				for (final Pair<Message, Boolean> pair : removeList) {
+				for (final MyPair<MessageAI, Boolean> pair : removeList) {
 					ship.removePossibleSpot(pair.first, pair.second);
 				}
 			}
@@ -829,33 +805,40 @@ public class ComputerAI extends PlayerClass {
 		writeDebug(initialTime, DEBUG_INDEX++);
 
 		/**
-		 * Place water in the common places of the ship possibilities
+		 * Place water/ship in the common places of the ship possibilities
 		 */
 		for (final ShipComputer ship : searchShips) {
 			if (ship.getSearchStatus() == SearchStatus.Some) {
-				final Set<Coordinate> commonParts = new HashSet<Coordinate>();
+				final Set<Coordinate> waterCommonParts = new HashSet<Coordinate>();
+				final Set<Coordinate> shipCommonParts = new HashSet<Coordinate>();
 				final List<Ship> allPlaces = ship.getAllPlaces();
 				Iterator<Ship> iterator = allPlaces.iterator();
-				if (iterator.hasNext()) {
-					Ship firstPosition = iterator.next();
-					commonParts.addAll(Coordinate.allAround(firstPosition));
-					commonParts.removeAll(firstPosition.getListPieces());
-					for (; iterator.hasNext();) {
-						final Ship possibility = iterator.next();
+
+				Ship firstPosition = iterator.next();
+				waterCommonParts.addAll(Coordinate.allAround(firstPosition));
+				waterCommonParts.removeAll(firstPosition.getListPieces());
+				shipCommonParts.addAll(firstPosition.getListPieces());
+				for (; iterator.hasNext();) {
+					final Ship possibility = iterator.next();
+					if (!waterCommonParts.isEmpty()) {
 						final Set<Coordinate> allAround = Coordinate.allAround(possibility);
 						allAround.removeAll(possibility.getListPieces());
-						commonParts.retainAll(allAround);
-						if (commonParts.isEmpty())
-							break;
+						waterCommonParts.retainAll(allAround);
 					}
-				} else {
-					for (int i = 0; i < 4; i++) {
-
-					}
+					if (!shipCommonParts.isEmpty())
+						shipCommonParts.retainAll(possibility.getListPieces());
+					if (waterCommonParts.isEmpty() && shipCommonParts.isEmpty())
+						break;
 				}
-				for (final Coordinate coor : commonParts) {
+				for (final Coordinate coor : waterCommonParts) {
 					if (game.isInsideField(coor) && markAt(coor) == Mark.None) {
 						setMarkAt(coor, Mark.Water);
+						updatedSomething = true;
+					}
+				}
+				for (final Coordinate coor : shipCommonParts) {
+					if (game.isInsideField(coor) && markAt(coor) == Mark.None) {
+						setMarkAt(coor, Mark.Ship);
 						updatedSomething = true;
 					}
 				}
@@ -925,8 +908,11 @@ public class ComputerAI extends PlayerClass {
 			final int MAX = Math.min(3, Math.min(maxX, maxY));
 
 			list.clear();
-			for (int maxDistTry = MAX; maxDistTry >= 2; maxDistTry--) {
+			return_label: for (int maxDistTry = MAX; maxDistTry >= 2; maxDistTry--) {
 				for (final CoordinateValue coor : clearShots) {
+					if (list.contains(coor))
+						continue;
+
 					boolean canAdd = true;
 					for (Coordinate other : previousShots) {
 						if (coor.dist(other) < maxDistTry) {
@@ -944,25 +930,10 @@ public class ComputerAI extends PlayerClass {
 					if (canAdd) {
 						list.add(coor);
 						size--;
+
+						if (size == 0)
+							break return_label;
 					}
-
-					if (size == 0)
-						break;
-				}
-				if (size == 0)
-					break;
-			}
-
-			// TODO: this part of code should not be necessary!!
-			if (size > 0) {
-				generatePossibleShots(true);
-				for (final Coordinate coor : possibleShots) {
-					if (!list.contains(coor))
-						list.add(coor);
-
-					size--;
-					if (size == 0)
-						break;
 				}
 			}
 		}
@@ -1000,7 +971,60 @@ public class ComputerAI extends PlayerClass {
 	@Override
 	protected void setMarkAt(int x, int y, Mark mark) {
 		super.setMarkAt(x, y, mark);
-		if (mark.isWater())
+		if (mark.isWater()) {
 			markWaterList.add(new Coordinate(x, y));
+
+			Coordinate markCoor = new Coordinate(x, y);
+			for (final ShipComputer ship : searchShips) {
+				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
+					final MessageAI message = pair.first;
+					if (message.getCoors().contains(markCoor)) {
+						message.getCoors().remove(markCoor);
+						message.removeWater();
+						ship.updateAllPlaces();
+					}
+				}
+			}
+
+			for (MessageAI message : searchMessages) {
+				if (message.getCoors().contains(markCoor)) {
+					message.getCoors().remove(markCoor);
+					message.removeWater();
+					break;
+				}
+			}
+		} else if (mark.isShip()) {
+			Coordinate markCoor = new Coordinate(x, y);
+			for (final ShipComputer ship : searchShips) {
+				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
+					final MessageAI message = pair.first;
+					if (message.getCoors().contains(markCoor)) {
+						ship.updateAllPlaces();
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	public void updateMessageShips(MyPair<MessageAI, Boolean> destroyedPair, ShipComputer destroyedShip) {
+		final MessageAI destroyedMessage = destroyedPair.first;
+		final Boolean killerShot = destroyedPair.second;
+		for (final ShipComputer ship : searchShips) {
+			if (ship != destroyedShip) {
+				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
+					final MessageAI message = pair.first;
+					if (message.getTurnId().equals(destroyedMessage.getTurnId())) {
+						for (Coordinate coor : destroyedShip.getListPieces()) {
+							if (message.getCoors().contains(coor)) {
+								message.getCoors().remove(coor);
+								message.removeShip(destroyedShip.getId(), killerShot);
+								ship.updateAllPlaces();
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }
