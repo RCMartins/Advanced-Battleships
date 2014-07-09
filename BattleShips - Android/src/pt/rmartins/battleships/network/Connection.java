@@ -35,11 +35,17 @@ public interface Connection {
 
 	public void addPlayCallBack(PlayCallback callback);
 
+	public void removeConnectionCallBack(ConnectionCallback callback);
+
+	public void removePlayCallBack(PlayCallback callback);
+
 	boolean isConnected();
 
 	public void closeConnection();
 
 	public String getJoinedGameId();
+
+	public void close();
 
 	/* #END Connection */
 
@@ -49,11 +55,15 @@ public interface Connection {
 
 	public void refreshGames();
 
-	public void joinExistingGame(String gameId);
+	public void joinGame(String gameId);
 
-	public void unjoinGame(String gameId);
+	public void unJoinGame(String gameId);
 
-	public void exitCurrentGame();
+	public void unHostGame(String gameId);
+
+	public boolean isHost();
+
+	public void setNickname(String nickname);
 
 	/* #END Nuggeta Logic */
 

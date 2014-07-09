@@ -2,3 +2,4 @@
 Language: en-US
 // on, off
 Sound: on
+Nickname: Player

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+	<string name="mainmenu_campaign">Campanha</string>
 	<string name="mainmenu_1player">1 Jogador</string>
 	<string name="mainmenu_2players">2 Jogadores</string>
 	<string name="mainmenu_options">Opções</string>
@@ -82,4 +83,14 @@
 	<string name="gameinfo_multikill_bonus">		Bonus de Multi-kill:</string>
 	
 	<string name="multiplayer_enemy_disconnected">Adversário Desconectou-se</string>
+	<string name="multiplayer_host_game">Criar novo jogo</string>
+	<string name="multiplayer_join_game">Entrar</string>
+	<string name="multiplayer_connected">Conectado como %1$s</string>
+	<string name="multiplayer_not_connected">A conectar...</string>
+	
+	<string name="login_nickname">Nickname: </string>
+	<string name="login_continue">Continuar</string>
+	
+	<string name="lobby_start_game">Começar Jogo</string>
+	<string name="lobby_versus">Vs</string>
 </resources>

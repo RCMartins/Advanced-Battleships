@@ -169,7 +169,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			WHICH_MENU_ENEMY_TEXT, EXIT_GAME_QUESTION_TEXT, EXIT_GAME_YES_TEXT, EXIT_GAME_NO_TEXT,
 			MY_INFO_SHIPS_LOST_TEXT };
 
-	private static final double WAITING_POPUP_TIME = 0.25;
+	private static final double WAITING_POPUP_TIME = 0.1;
 	private static final double POPUP_TIME_YOUR_TURN = 1.5;
 	private static final double POPUP_TIME_EXTRA_TURN = 2.5;
 	private static final double POPUP_TIME_EXTERNAL_MESSAGE = 4.0;

@@ -21,6 +21,8 @@ import pt.rmartins.battleships.utilities.LanguageClass;
 import pt.rmartins.battleships.utilities.StopWatch;
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -32,16 +34,20 @@ public abstract class GameClass implements Game {
 	private static final String TAG = GameClass.class.getSimpleName();
 
 	public static final Random random;
+
 	static {
 		if (ComputerAI.DEBUG_AI)
-			random = new Random(5);
+			random = new Random(1);
 		else
 			random = new Random();
 	}
 
-	private static boolean soundIsOn;
 	private static Context context;
 	private static Resources res;
+	private static Editor editor;
+
+	private static boolean soundIsOn;
+	private static String multiplayerNickname;
 	protected static List<Fleet> avaiableFleets;
 	protected static List<GameMode> gameModes;
 
@@ -50,6 +56,8 @@ public abstract class GameClass implements Game {
 	}
 
 	public static void setSoundIsOn(boolean value) {
+		editor.putBoolean(PREFERENCES_SOUND_KEY, value);
+		editor.apply();
 		soundIsOn = value;
 	}
 
@@ -63,6 +71,61 @@ public abstract class GameClass implements Game {
 
 	public static List<GameMode> getGameModes() {
 		return gameModes;
+	}
+
+	public static String getMultiplayerNickname() {
+		return multiplayerNickname;
+	}
+
+	public static void setMultiplayerNickname(String nickname) {
+		if (isNicknameValid(nickname)) {
+			nickname = nickname.trim();
+			editor.putString(PREFERENCES_NICKNAME_KEY, nickname);
+			editor.apply();
+			GameClass.multiplayerNickname = nickname;
+		}
+	}
+
+	private static boolean isNicknameValid(String nickname) {
+		return nickname.trim().length() > 0;
+	}
+
+	public static void initializeGameClass(Activity activity) {
+		loadSettings(activity);
+
+		if (Game.DEBUG)
+			soundIsOn = false;
+
+		ShipClass.initializeClass();
+		DataLoader.loadShips();
+
+		avaiableFleets = new ArrayList<Fleet>();
+		DataLoader.loadGameFleets(avaiableFleets);
+		avaiableFleets = Collections.unmodifiableList(avaiableFleets);
+
+		gameModes = new ArrayList<GameMode>();
+		DataLoader.loadGameModes(gameModes);
+		gameModes = Collections.unmodifiableList(gameModes);
+	}
+
+	public static void loadSettings(Activity activity) {
+		GameClass.context = activity;
+		GameClass.res = activity.getResources();
+
+		SharedPreferences settings = context.getSharedPreferences(Game.PREFERENCES_SETTINGS_FILE_NAME, 0);
+		editor = settings.edit();
+
+		if (settings.getBoolean(PREFERENCES_INITIALIZED_KEY, false)) {
+			final String localeStr = settings.getString(PREFERENCES_LOCALE_KEY, "en-US");
+			final Locale locale = LanguageClass.getLocale(localeStr);
+			LanguageClass.initialize(activity, locale, res);
+			soundIsOn = settings.getBoolean(PREFERENCES_SOUND_KEY, true);
+			multiplayerNickname = settings.getString(PREFERENCES_NICKNAME_KEY, "Player");
+		} else {
+			DataLoader.loadDefaultSettings(activity, res);
+			editor.putBoolean(PREFERENCES_INITIALIZED_KEY, true);
+			editor.apply();
+		}
 	}
 
 	protected int SCREENX, SCREENY;
@@ -90,27 +153,6 @@ public abstract class GameClass implements Game {
 	protected final Random randomVar;
 
 	protected final Callback finishGameCallBack;
-
-	public static void initializeGameClass(Activity activity) {
-		GameClass.context = activity;
-		GameClass.res = activity.getResources();
-		LanguageClass.initialize(Locale.ENGLISH, GameClass.res);
-		DataLoader.loadSettings();
-
-		if (Game.DEBUG)
-			soundIsOn = false;
-
-		ShipClass.initializeClass();
-		DataLoader.loadShips();
-
-		avaiableFleets = new ArrayList<Fleet>();
-		DataLoader.loadGameFleets(avaiableFleets);
-		avaiableFleets = Collections.unmodifiableList(avaiableFleets);
-
-		gameModes = new ArrayList<GameMode>();
-		DataLoader.loadGameModes(gameModes);
-		gameModes = Collections.unmodifiableList(gameModes);
-	}
 
 	public GameClass(Callback finishGameCallBack) {
 		this.finishGameCallBack = finishGameCallBack;

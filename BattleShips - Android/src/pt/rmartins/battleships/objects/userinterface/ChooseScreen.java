@@ -20,6 +20,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.view.MotionEvent;
 
@@ -39,17 +40,6 @@ public class ChooseScreen extends UserInterfaceClass {
 		Fleet, GameMode, FieldSize;
 	}
 
-	private static class FleetShip {
-		private final int id, sizeX, sizeY, rotation;
-
-		public FleetShip(int id, int sizeX, int sizeY, int rotation) {
-			this.id = id;
-			this.sizeX = sizeX;
-			this.sizeY = sizeY;
-			this.rotation = rotation;
-		}
-	}
-
 	private static final int GAMEINFO_FIELD_SIZE_CODE = R.string.gameinfo_field_size;
 
 	private static final int CHOOSE_FLEET_CODE = R.string.choose_screen_choose_fleet;
@@ -57,6 +47,12 @@ public class ChooseScreen extends UserInterfaceClass {
 	private static final int CHOOSE_FIELD_SIZE_CODE = R.string.choose_screen_choose_fieldsize;
 
 	private static Paint TEXT_PAINT, GAME_MODE_TEXT_PAINT, FIELD_PEN, SHIP_PAINT;
+
+	private MyButton CHOOSE_FLEET_BUTTON, CHOOSE_GAMEMODE_BUTTON;
+	private RectF FLEET_AREA, GAME_INFO_AREA;
+
+	private String CHOOSE_FLEET_TEXT, CHOOSE_GAME_MODE_TEXT, CHOOSE_FIELD_SIZE_TEXT;
+	private float TEXT_HEIGHT;
 
 	private final Game game;
 	private final float maxX;
@@ -68,21 +64,12 @@ public class ChooseScreen extends UserInterfaceClass {
 	private GameMode currentGameMode;
 	private int currentGameModeIndex;
 
-	private final List<List<FleetShip>> fleetShips;
-	private final float[] squareSizeList;
-
-	private MyButton FLEET_AREA, GAME_INFO_AREA, CHOOSE_FLEET_BUTTON, CHOOSE_GAMEMODE_BUTTON;
-
-	private String CHOOSE_FLEET_TEXT, CHOOSE_GAME_MODE_TEXT, CHOOSE_FIELD_SIZE_TEXT;
-	private float TEXT_HEIGHT;
+	private final List<ShowFleetData> showFleet;
 
 	private final float SWIPE_X_THRESHOLD;
 
-	private final float scrollX, scrollY;
 	private float firstX, firstY, lastX, lastY;
 	private boolean swipeTouchDown;
-
-	//	private double lastTime;
 
 	public ChooseScreen(int maxX, int maxY, Game game) {
 		this.maxX = maxX;
@@ -92,26 +79,20 @@ public class ChooseScreen extends UserInterfaceClass {
 		state = State.Fleet;
 
 		currentFleetIndex = 0;
-		currentFleet = GameClass.getAvaiableFleets().get(currentFleetIndex);
+		final List<Fleet> avaiableFleets = GameClass.getAvaiableFleets();
+		currentFleet = avaiableFleets.get(currentFleetIndex);
 		currentGameModeIndex = 0;
 		currentGameMode = GameClass.getGameModes().get(currentGameModeIndex);
 
-		scrollX = 0f;
-		scrollY = 0f;
-
 		SWIPE_X_THRESHOLD = maxX / 3;
 
-		final int numberOfFleets = GameClass.getAvaiableFleets().size();
-		final int numberOfShips = ShipClass.numberOfShips();
+		initializeAreas();
 
-		fleetShips = new ArrayList<List<FleetShip>>(numberOfFleets);
-		squareSizeList = new float[numberOfFleets];
+		final int numberOfFleets = avaiableFleets.size();
+		showFleet = new ArrayList<ShowFleetData>(numberOfFleets);
 		for (int i = 0; i < numberOfFleets; i++) {
-			fleetShips.add(new ArrayList<FleetShip>(numberOfShips));
-			squareSizeList[i] = 0;
+			showFleet.add(new ShowFleetData(FLEET_AREA, TEXT_HEIGHT, avaiableFleets.get(i)));
 		}
-
-		initialize();
 	}
 
 	public static void initializeScreenMultiplier(float SCREEN_SUPPORT_MULTIPLIER) {
@@ -145,7 +126,7 @@ public class ChooseScreen extends UserInterfaceClass {
 
 	}
 
-	private void initialize() {
+	private void initializeAreas() {
 		CHOOSE_FLEET_TEXT = LanguageClass.getString(CHOOSE_FLEET_CODE);
 		CHOOSE_GAME_MODE_TEXT = LanguageClass.getString(CHOOSE_GAME_MODE_CODE);
 
@@ -168,83 +149,6 @@ public class ChooseScreen extends UserInterfaceClass {
 		}
 	}
 
-	private synchronized float calcFleetScreenSize(int fleetIndex) {
-		if (squareSizeList[fleetIndex] == 0) {
-			final Fleet fleet = GameClass.getAvaiableFleets().get(fleetIndex);
-			squareSizeList[fleetIndex] = calcFleetScreenSizeAux(SQUARE_SIZE_INIT, fleet, fleetShips.get(fleetIndex));
-		}
-		return squareSizeList[fleetIndex];
-	}
-
-	private float calcFleetScreenSizeAux(float squareSize, Fleet calcFleet, List<FleetShip> calcFleetShips) {
-		float x = FLEET_AREA.left;
-		float y = FLEET_AREA.top;
-		y += TEXT_HEIGHT;
-		y += OUT_PADDING + squareSize * .5f;
-
-		final float distX = 0.5f;
-		final float distY = 0.5f;
-
-		final List<Integer> fleet = calcFleet.getFleetNumbers();
-		calcFleetShips.clear();
-
-		for (int id = 0; id < fleet.size(); id++) {
-			final int fleetN = fleet.get(id);
-			if (fleetN > 0) {
-				int sX = -1;
-				int r = -1;
-				int minY = Integer.MAX_VALUE;
-				final List<ShipData> allRotations = ShipClass.getAllRotations(id);
-				for (int rotation = 0; rotation < allRotations.size(); rotation++) {
-					ShipData shipData = allRotations.get(rotation);
-					if (shipData.sizeY < minY) {
-						minY = shipData.sizeY;
-						sX = shipData.sizeX;
-						r = rotation;
-					}
-				}
-				FleetShip ship = new FleetShip(id, sX, minY, r);
-				calcFleetShips.add(ship);
-			}
-		}
-
-		Collections.sort(calcFleetShips, new Comparator<FleetShip>() {
-			@Override
-			public int compare(FleetShip lhs, FleetShip rhs) {
-				return lhs.sizeY - rhs.sizeY;
-			}
-		});
-
-		for (int i = 0; i < calcFleetShips.size(); i++) {
-			final FleetShip fleetShip = calcFleetShips.get(i);
-			final int fleetN = fleet.get(fleetShip.id);
-
-			if (i > 0) {
-				if (calcFleetShips.get(i - 1).sizeY == fleetShip.sizeY) {
-					x += squareSize * 1.0f;
-				} else {
-					x = FLEET_AREA.left;
-					y += squareSize * (calcFleetShips.get(i - 1).sizeY + distY);
-				}
-			}
-
-			for (int j = 0; j < fleetN; j++) {
-				if (x + squareSize * fleetShip.sizeX > FLEET_AREA.right) {
-					x = FLEET_AREA.left;
-					y += squareSize * (fleetShip.sizeY + distY);
-				}
-				x += squareSize * (fleetShip.sizeX + distX);
-			}
-		}
-
-		y += squareSize * calcFleetShips.get(calcFleetShips.size() - 1).sizeY;
-		if (y > FLEET_AREA.bottom) {
-			return calcFleetScreenSizeAux(squareSize * .9f, calcFleet, calcFleetShips);
-		} else {
-			return squareSize;
-		}
-	}
-
 	@Override
 	public synchronized void draw(Canvas canvas) {
 		if (swipeTouchDown) {
@@ -259,81 +163,34 @@ public class ChooseScreen extends UserInterfaceClass {
 				if (index != 0) {
 					if (index == 1) {
 						canvas.translate(-diffX, 0);
-						drawState(canvas, currentFleet, currentFleetIndex, currentGameMode);
+						drawState(canvas, currentFleetIndex, currentGameMode);
 						canvas.translate(maxX, 0);
 					} else if (index == -1) {
 						canvas.translate(-diffX, 0);
-						drawState(canvas, currentFleet, currentFleetIndex, currentGameMode);
+						drawState(canvas, currentFleetIndex, currentGameMode);
 						canvas.translate(-maxX, 0);
 					}
 
 					if (state == State.Fleet) {
 						final List<Fleet> avaiableFleets = GameClass.getAvaiableFleets();
 						int nextIndex = (avaiableFleets.size() + currentFleetIndex + index) % avaiableFleets.size();
-						Fleet nextFleet = avaiableFleets.get(nextIndex);
-						drawState(canvas, nextFleet, nextIndex, currentGameMode);
+						drawState(canvas, nextIndex, currentGameMode);
 					} else if (state == State.GameMode) {
 						final List<GameMode> gameModes = GameClass.getGameModes();
 						int nextGameModeIndex = (gameModes.size() + currentGameModeIndex + index) % gameModes.size();
 						GameMode nextGameMode = gameModes.get(nextGameModeIndex);
-						drawState(canvas, currentFleet, currentFleetIndex, nextGameMode);
+						drawState(canvas, currentFleetIndex, nextGameMode);
 					}
 					return;
 				}
 			}
 		}
-		drawState(canvas, currentFleet, currentFleetIndex, currentGameMode);
+		drawState(canvas, currentFleetIndex, currentGameMode);
 	}
 
-	private void drawState(Canvas canvas, Fleet drawFleet, int drawFleetIndex, GameMode drawGameMode) {
+	private void drawState(Canvas canvas, int drawFleetIndex, GameMode drawGameMode) {
 		if (state == State.Fleet) {
-			float squareSize = calcFleetScreenSize(drawFleetIndex);
-
-			canvas.save();
-			canvas.clipRect(FLEET_AREA);
-
-			float x = FLEET_AREA.left;
-			float y = FLEET_AREA.top;
-
-			y += TEXT_HEIGHT;
-
-			final int fieldMaxX = drawFleet.maxX;
-			final int fieldMaxY = drawFleet.maxY;
-			canvas.drawText(LanguageClass.getString(GAMEINFO_FIELD_SIZE_CODE, fieldMaxX, fieldMaxY),
-					FLEET_AREA.centerX(), y, TEXT_PAINT);
-			y += OUT_PADDING + squareSize * .5f;
-
-			final float distX = 0.5f;
-			final float distY = 0.5f;
-
-			final List<Integer> fleet = drawFleet.getFleetNumbers();
-			final List<FleetShip> drawFleetShips = fleetShips.get(drawFleetIndex);
-
-			for (int i = 0; i < drawFleetShips.size(); i++) {
-				final FleetShip fleetShip = drawFleetShips.get(i);
-				final int fleetN = fleet.get(fleetShip.id);
-
-				if (i > 0) {
-					if (drawFleetShips.get(i - 1).sizeY == fleetShip.sizeY) {
-						x += squareSize * 1.0f;
-					} else {
-						x = FLEET_AREA.left;
-						y += squareSize * (drawFleetShips.get(i - 1).sizeY + distY);
-					}
-				}
-
-				for (int j = 0; j < fleetN; j++) {
-					if (x + squareSize * fleetShip.sizeX > FLEET_AREA.right) {
-						x = FLEET_AREA.left;
-						y += squareSize * (fleetShip.sizeY + distY);
-					}
-					drawShip(canvas, x, y, squareSize, ShipClass.getShipParts(fleetShip.id, fleetShip.rotation),
-							SHIP_PAINT);
-					x += squareSize * (fleetShip.sizeX + distX);
-				}
-			}
-
-			canvas.restore();
+			showFleet.get(drawFleetIndex).draw(canvas);
 			drawButton(canvas, CHOOSE_FLEET_TEXT, CHOOSE_FLEET_BUTTON, TEXT_PAINT);
 		} else if (state == State.GameMode) {
 			ScreenUtils.drawGameInfo(canvas, game, drawGameMode, GAME_INFO_AREA, GAME_MODE_TEXT_PAINT, TEXT_PAINT,
@@ -342,20 +199,6 @@ public class ChooseScreen extends UserInterfaceClass {
 		} else if (state == State.FieldSize) {
 
 		}
-	}
-
-	private void drawShip(Canvas canvas, float initX, float initY, float ss, List<Coordinate> listPieces,
-			Paint shipPaint) {
-		canvas.translate(initX, initY);
-		for (Coordinate coor : listPieces) {
-			final float x1 = coor.x * ss;
-			final float y1 = coor.y * ss;
-			final float x2 = (coor.x + 1) * ss;
-			final float y2 = (coor.y + 1) * ss;
-			canvas.drawRect(x1, y1, x2, y2, shipPaint);
-			canvas.drawRect(x1, y1, x2, y2, FIELD_PEN);
-		}
-		canvas.translate(-initX, -initY);
 	}
 
 	@Override
@@ -409,8 +252,6 @@ public class ChooseScreen extends UserInterfaceClass {
 
 	@Override
 	public synchronized void update(double timeElapsed) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -420,5 +261,168 @@ public class ChooseScreen extends UserInterfaceClass {
 			return true;
 		} else
 			return super.backPressed();
+	}
+
+	public static class ShowFleetData {
+
+		private static class FleetShip {
+			private final int id, sizeX, sizeY, rotation;
+
+			public FleetShip(int id, int sizeX, int sizeY, int rotation) {
+				this.id = id;
+				this.sizeX = sizeX;
+				this.sizeY = sizeY;
+				this.rotation = rotation;
+			}
+		}
+
+		private final RectF fleetArea;
+		private final float textHeight;
+		private final Fleet drawFleet;
+		private final List<FleetShip> drawFleetShips;
+		private boolean initialized;
+		private float squareSize;
+
+		public ShowFleetData(RectF fleetArea, float textHeight, Fleet drawFleet) {
+			this.fleetArea = fleetArea;
+			this.textHeight = textHeight;
+			this.drawFleet = drawFleet;
+
+			final int numberOfShips = ShipClass.numberOfShips();
+			drawFleetShips = new ArrayList<FleetShip>(numberOfShips);
+			initialized = false;
+			squareSize = 0;
+		}
+
+		private float calcFleetScreenSize(float squareSize) {
+			float x = fleetArea.left;
+			float y = fleetArea.top;
+			y += textHeight;
+			y += OUT_PADDING + squareSize * .5f;
+
+			final float distX = 0.5f;
+			final float distY = 0.5f;
+
+			final List<Integer> fleet = drawFleet.getFleetNumbers();
+			drawFleetShips.clear();
+
+			for (int id = 0; id < fleet.size(); id++) {
+				final int fleetN = fleet.get(id);
+				if (fleetN > 0) {
+					int sX = -1;
+					int r = -1;
+					int minY = Integer.MAX_VALUE;
+					final List<ShipData> allRotations = ShipClass.getAllRotations(id);
+					for (int rotation = 0; rotation < allRotations.size(); rotation++) {
+						ShipData shipData = allRotations.get(rotation);
+						if (shipData.sizeY < minY) {
+							minY = shipData.sizeY;
+							sX = shipData.sizeX;
+							r = rotation;
+						}
+					}
+					FleetShip ship = new FleetShip(id, sX, minY, r);
+					drawFleetShips.add(ship);
+				}
+			}
+
+			Collections.sort(drawFleetShips, new Comparator<FleetShip>() {
+				@Override
+				public int compare(FleetShip lhs, FleetShip rhs) {
+					return lhs.sizeY - rhs.sizeY;
+				}
+			});
+
+			for (int i = 0; i < drawFleetShips.size(); i++) {
+				final FleetShip fleetShip = drawFleetShips.get(i);
+				final int fleetN = fleet.get(fleetShip.id);
+
+				if (i > 0) {
+					if (drawFleetShips.get(i - 1).sizeY == fleetShip.sizeY) {
+						x += squareSize * 1.0f;
+					} else {
+						x = fleetArea.left;
+						y += squareSize * (drawFleetShips.get(i - 1).sizeY + distY);
+					}
+				}
+
+				for (int j = 0; j < fleetN; j++) {
+					if (x + squareSize * fleetShip.sizeX > fleetArea.right) {
+						x = fleetArea.left;
+						y += squareSize * (fleetShip.sizeY + distY);
+					}
+					x += squareSize * (fleetShip.sizeX + distX);
+				}
+			}
+
+			y += squareSize * drawFleetShips.get(drawFleetShips.size() - 1).sizeY;
+			if (y > fleetArea.bottom) {
+				return calcFleetScreenSize(squareSize * .9f);
+			} else {
+				return squareSize;
+			}
+		}
+
+		public void draw(Canvas canvas) {
+			if (!initialized) {
+				squareSize = calcFleetScreenSize(SQUARE_SIZE_INIT);
+				initialized = true;
+			}
+
+			float x = fleetArea.left;
+			float y = fleetArea.top;
+
+			y += textHeight;
+
+			final int fieldMaxX = drawFleet.maxX;
+			final int fieldMaxY = drawFleet.maxY;
+			canvas.drawText(LanguageClass.getString(GAMEINFO_FIELD_SIZE_CODE, fieldMaxX, fieldMaxY),
+					fleetArea.centerX(), y, TEXT_PAINT);
+			y += OUT_PADDING + squareSize * .5f;
+
+			final float distX = 0.5f;
+			final float distY = 0.5f;
+
+			final List<Integer> fleet = drawFleet.getFleetNumbers();
+
+			for (int i = 0; i < drawFleetShips.size(); i++) {
+				final FleetShip fleetShip = drawFleetShips.get(i);
+				final int fleetN = fleet.get(fleetShip.id);
+
+				if (i > 0) {
+					if (drawFleetShips.get(i - 1).sizeY == fleetShip.sizeY) {
+						x += squareSize * 1.0f;
+					} else {
+						x = fleetArea.left;
+						y += squareSize * (drawFleetShips.get(i - 1).sizeY + distY);
+					}
+				}
+
+				for (int j = 0; j < fleetN; j++) {
+					if (x + squareSize * fleetShip.sizeX > fleetArea.right) {
+						x = fleetArea.left;
+						y += squareSize * (fleetShip.sizeY + distY);
+					}
+					drawShip(canvas, x, y, squareSize, ShipClass.getShipParts(fleetShip.id, fleetShip.rotation),
+							SHIP_PAINT);
+					x += squareSize * (fleetShip.sizeX + distX);
+				}
+			}
+		}
+
+		private void drawShip(Canvas canvas, float initX, float initY, float ss, List<Coordinate> listPieces,
+				Paint shipPaint) {
+			canvas.translate(initX, initY);
+			for (Coordinate coor : listPieces) {
+				final float x1 = coor.x * ss;
+				final float y1 = coor.y * ss;
+				final float x2 = (coor.x + 1) * ss;
+				final float y2 = (coor.y + 1) * ss;
+				canvas.drawRect(x1, y1, x2, y2, shipPaint);
+				canvas.drawRect(x1, y1, x2, y2, FIELD_PEN);
+			}
+			canvas.translate(-initX, -initY);
+		}
+
 	}
 }

@@ -15,13 +15,17 @@ import pt.rmartins.battleships.objects.modes.GameBonus.Explosion;
 import pt.rmartins.battleships.objects.modes.GameBonus.ExtraTurn;
 import pt.rmartins.battleships.objects.modes.GameMode.TimeLimitType;
 import pt.rmartins.battleships.objects.userinterface.ChooseScreen;
+import pt.rmartins.battleships.objects.userinterface.KeyboardInterface;
+import pt.rmartins.battleships.objects.userinterface.LobbyScreen;
+import pt.rmartins.battleships.objects.userinterface.LoginScreen;
 import pt.rmartins.battleships.objects.userinterface.MultiplayerScreen;
 import pt.rmartins.battleships.objects.userinterface.PlacingShipsScreen;
 import pt.rmartins.battleships.objects.userinterface.PlayInterface;
 import pt.rmartins.battleships.objects.userinterface.PlayingScreen;
-import pt.rmartins.battleships.objects.userinterface.WaitScreen;
+import pt.rmartins.battleships.objects.userinterface.UserInterface;
 import pt.rmartins.battleships.utilities.LanguageClass;
 import android.app.Activity;
+import android.view.KeyEvent;
 
 public class GameVsPlayer extends GameClass implements PlayCallback {
 
@@ -29,10 +33,12 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 	private static final String TAG = GameVsPlayer.class.getSimpleName();
 
 	public static final PlayingMode PLAYING_VERSUS = PlayingMode.PlayerVsPlayerNetwork;
+	private final Activity activity;
 	private Connection conn;
 
 	public GameVsPlayer(Activity activity, Callback finishGameCallBack) {
 		super(finishGameCallBack);
+		this.activity = activity;
 
 		conn = new ConnectionNugetta();
 		conn.addPlayCallBack(this);
@@ -40,7 +46,7 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 
 	@Override
 	public void initialize() {
-		setGameState(GameState.MultiplayerMenu);
+		setGameState(GameState.LoginMenu);
 	}
 
 	@Override
@@ -194,28 +200,34 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 		this.gameState = newGameState;
 
 		switch (this.gameState) {
+		case LoginMenu:
+			setNewGUI(new LoginScreen(SCREENX, SCREENY, this, activity, conn));
+			break;
 		case MultiplayerMenu:
-			GUI = new MultiplayerScreen(SCREENX, SCREENY, this, conn);
+			setNewGUI(new MultiplayerScreen(SCREENX, SCREENY, this, conn));
+			break;
+		case LobbyMenu:
+		case WaitMaster:
+			setNewGUI(new LobbyScreen(SCREENX, SCREENY, this, conn));
 			break;
 		case ChoosingMode:
-			GUI = new ChooseScreen(SCREENX, SCREENY, this);
+			setNewGUI(new ChooseScreen(SCREENX, SCREENY, this));
 			break;
 		case SendInitializingInformation:
-			GUI = new WaitScreen(SCREENX, SCREENY);
+			setNewGUI(null);
 			initializePlacingShips(false);
 			break;
-		case WaitMaster:
-			GUI = new WaitScreen(SCREENX, SCREENY);
-			break;
 		case PlacingShips:
-			GUI = new PlacingShipsScreen(SCREENX, SCREENY, this);
+			setNewGUI(new PlacingShipsScreen(SCREENX, SCREENY, this));
 			break;
 		case Playing:
-			GUI = new PlayingScreen(SCREENX, SCREENY, player1, this, finishGameCallBack);
+			setNewGUI(new PlayingScreen(SCREENX, SCREENY, player1, this, finishGameCallBack));
 			break;
 		case FinishedGame:
-			time.stop();
-			turnTime.stop();
+			if (time != null) {
+				time.stop();
+				turnTime.stop();
+			}
 			break;
 		default:
 			break;
@@ -229,6 +241,12 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 					currentFleet.maxY);
 			setGameState(GameState.MultiplayerMenu);
 		}
+	}
+
+	private void setNewGUI(UserInterface newGUI) {
+		if (GUI != null)
+			GUI.clean();
+		GUI = newGUI;
 	}
 
 	@Override
@@ -307,7 +325,7 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 				|| gameState == GameState.Playing || gameState == GameState.PlayingInPause
 				|| gameState == GameState.FinishedGame) {
 			if (conn != null)
-				conn.exitCurrentGame();
+				conn.close();
 		}
 		return false;
 	}
@@ -330,6 +348,16 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 	public void receiveOponentDisconnected() {
 		if (GUI != null && GUI instanceof PlayInterface)
 			((PlayInterface) GUI).externalMessage(LanguageClass.getString(R.string.multiplayer_enemy_disconnected));
-		finishGame(player1);
+		if (gameState == GameState.Playing || gameState == GameState.PlayingInPause) {
+			finishGame(player1);
+		}
+	}
+
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		if (GUI != null && GUI instanceof KeyboardInterface)
+			return ((KeyboardInterface) GUI).dispatchKeyEvent(event);
+		else
+			return false;
 	}
 }

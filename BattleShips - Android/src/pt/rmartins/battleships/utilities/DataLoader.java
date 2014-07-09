@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
@@ -22,6 +23,8 @@ import pt.rmartins.battleships.objects.modes.GameMode;
 import pt.rmartins.battleships.parser.gamemodes.ParserGameModes;
 import pt.rmartins.battleships.parser.ships.ParserShips;
 import android.app.Activity;
+import android.content.Context;
+import android.content.res.Resources;
 
 public final class DataLoader {
 
@@ -41,7 +44,7 @@ public final class DataLoader {
 	}
 
 	public static void loadGameFleets(List<Fleet> avaiableFleets) {
-		final List<String> input = DataLoader.getClearText(R.raw.fleettypes);
+		final List<String> input = DataLoader.getClearText(R.raw.data__fleettypes);
 		if (input != null) {
 			for (final String s : input) {
 				final String[] tokens = s.split(";");
@@ -154,7 +157,7 @@ public final class DataLoader {
 	// }
 
 	public static void loadShips() {
-		final List<String> input = DataLoader.getClearText(R.raw.shipsdata);
+		final List<String> input = DataLoader.getClearText(R.raw.data__shipsdata);
 		if (input == null || input.isEmpty())
 			return;
 		ParserShips.parseShips(listToString(input));
@@ -204,23 +207,34 @@ public final class DataLoader {
 		//		}
 	}
 
-	public static void loadSettings() {
-		final List<String> input = DataLoader.getClearText(R.raw.settings);
+	public static void loadDefaultSettings(Context context, Resources res) {
+		Locale locale = Locale.ENGLISH;
+		boolean soundIsOn = true;
+		String nickname = "Player";
+
+		final List<String> input = DataLoader.getClearText(R.raw.data__default_settings);
 		if (input != null) {
 			for (String line : input) {
 				String[] tokens = line.split(":");
 				if (tokens.length == 2) {
 					String settingName = tokens[0].trim();
-					String language = tokens[1].trim();
+					String setting = tokens[1].trim();
 
 					if (settingName.equalsIgnoreCase("Language")) {
-						LanguageClass.setLanguage(LanguageClass.getLocale(language));
-					} else if (settingName.equalsIgnoreCase("Sound") && language.matches("on|off")) {
-						GameClass.setSoundIsOn(language.equals("on"));
+						locale = LanguageClass.getLocale(setting);
+					} else if (settingName.equalsIgnoreCase("Sound") && setting.matches("on|off")) {
+						soundIsOn = setting.equals("on");
+					} else if (settingName.equalsIgnoreCase("Nickname")) {
+						nickname = setting;
 					}
 				}
 			}
 		}
+
+		LanguageClass.initialize(context, locale, res);
+		LanguageClass.setLanguage(locale);
+		GameClass.setSoundIsOn(soundIsOn);
+		GameClass.setMultiplayerNickname(nickname);
 	}
 
 	private static boolean inCommentBlock;

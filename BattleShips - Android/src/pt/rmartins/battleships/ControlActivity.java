@@ -3,6 +3,8 @@ package pt.rmartins.battleships;
 import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.objects.userinterface.ChooseScreen;
+import pt.rmartins.battleships.objects.userinterface.LobbyScreen;
+import pt.rmartins.battleships.objects.userinterface.LoginScreen;
 import pt.rmartins.battleships.objects.userinterface.MainMenu;
 import pt.rmartins.battleships.objects.userinterface.MultiplayerScreen;
 import pt.rmartins.battleships.objects.userinterface.OptionsScreen;
@@ -10,13 +12,13 @@ import pt.rmartins.battleships.objects.userinterface.PlacingShipsScreen;
 import pt.rmartins.battleships.objects.userinterface.PlayingScreen;
 import pt.rmartins.battleships.objects.userinterface.ScreenUtils;
 import pt.rmartins.battleships.objects.userinterface.UserInterfaceClass;
-import pt.rmartins.battleships.objects.userinterface.WaitScreen;
 import pt.rmartins.battleships.utilities.DataLoader;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.DisplayMetrics;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -61,11 +63,16 @@ public class ControlActivity extends Activity {
 				ChooseScreen.initializeScreenMultiplier(SCREEN_SUPPORT_MULTIPLIER);
 				PlacingShipsScreen.initializeScreenMultiplier(SCREEN_SUPPORT_MULTIPLIER);
 				PlayingScreen.initializeScreenMultiplier(activity, SCREEN_SUPPORT_MULTIPLIER);
+				LoginScreen.initializeScreenMultiplier(activity, SCREEN_SUPPORT_MULTIPLIER);
 				MultiplayerScreen.initializeScreenMultiplier(activity, SCREEN_SUPPORT_MULTIPLIER);
-				WaitScreen.initializeScreenMultiplier(SCREEN_SUPPORT_MULTIPLIER);
+				LobbyScreen.initializeScreenMultiplier(activity, SCREEN_SUPPORT_MULTIPLIER);
+				//WaitScreen.initializeScreenMultiplier(SCREEN_SUPPORT_MULTIPLIER);
 				OptionsScreen.initializeScreenMultiplier(activity, SCREEN_SUPPORT_MULTIPLIER);
 
+				DataLoader.initializeDataLoader(activity);
 				GameClass.initializeGameClass(activity);
+			} else {
+				GameClass.loadSettings(activity);
 			}
 
 			return activity;
@@ -100,8 +107,6 @@ public class ControlActivity extends Activity {
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.activity_loading);
 
-		DataLoader.initializeDataLoader(this);
-
 		new InitializeTask().execute(this);
 
 		// register main activity on NuggetaContext
@@ -112,6 +117,12 @@ public class ControlActivity extends Activity {
 	protected void onStart() {
 		super.onStart();
 		//		Control.unPause();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		GameClass.loadSettings(this);
 	}
 
 	@Override
@@ -130,9 +141,15 @@ public class ControlActivity extends Activity {
 	}
 
 	@Override
-	public void onBackPressed() {
-		if (initialized)
-			menuPanel.onBackPressed();
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		if (initialized) {
+			if (event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+				menuPanel.onBackPressed();
+				return true;
+			} else
+				return menuPanel.dispatchKeyEvent(event);
+		} else
+			return false;
 	}
 
 	public void button_test(View view) {
@@ -140,4 +157,5 @@ public class ControlActivity extends Activity {
 		//		final String resultId = nuggetaPlug.searchImmediateGame();
 		//		Log.i(TAG, resultId);
 	}
+
 }

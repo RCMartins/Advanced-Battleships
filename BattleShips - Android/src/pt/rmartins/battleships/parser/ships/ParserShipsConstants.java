@@ -25,9 +25,13 @@ public interface ParserShipsConstants {
   /** RegularExpression Id. */
   int ID = 11;
   /** RegularExpression Id. */
-  int DIGIT = 12;
+  int HEX = 12;
   /** RegularExpression Id. */
-  int CHAR = 13;
+  int DIGIT = 13;
+  /** RegularExpression Id. */
+  int CHAR = 14;
+  /** RegularExpression Id. */
+  int HEX_CHAR = 15;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -46,8 +50,10 @@ public interface ParserShipsConstants {
     "\"Languages\"",
     "<NUM>",
     "<ID>",
+    "<HEX>",
     "<DIGIT>",
     "<CHAR>",
+    "<HEX_CHAR>",
   };
 
 }

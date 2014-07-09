@@ -7,7 +7,10 @@ import pt.rmartins.battleships.network.Connection;
 import pt.rmartins.battleships.network.ConnectionCallback;
 import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.Game.GameState;
+import pt.rmartins.battleships.objects.GameClass;
+import pt.rmartins.battleships.objects.Player;
 import pt.rmartins.battleships.utilities.Draw;
+import pt.rmartins.battleships.utilities.LanguageClass;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -28,12 +31,12 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 	private static float SMALL_TEXT_SIZE = 18f;
 	private static float REFRESH_AREA_SIZE = 50f;
 
-	private static final String CREATE_GAME_TEXT = "Host new game";
-	private static final String JOIN_GAME_TEXT = "Join";
-	private static final String UNJOIN_GAME_TEXT = "Unjoin";
-	private static final String WAITING_TEXT = "Waiting...";
-	private static final String CONNECTED_TEXT = "Connected as guest";
-	private static final String NOT_CONNECTED_TEXT = "connecting...";
+	private static final int CREATE_GAME_CODE = R.string.multiplayer_host_game;
+	private static final int JOIN_GAME_CODE = R.string.multiplayer_join_game;
+	private static final int CONNECTED_CODE = R.string.multiplayer_connected;
+	private static final int NOT_CONNECTED_CODE = R.string.multiplayer_not_connected;
+
+	private static String CREATE_GAME_TEXT, JOIN_GAME_TEXT, NOT_CONNECTED_TEXT;
 
 	private static Paint TEXT_PAINT, SMALL_LEFT_TEXT_PAINT, SMALL_TEXT_PAINT, LEFT_TEXT_PAINT, RIGHT_TEXT_PAINT,
 			IMAGE_PAINT, GAME_AREA_PEN;
@@ -54,7 +57,7 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 	private boolean connected;
 
 	private List<GameDefinition> existingGames;
-	private String joinedId;
+	private final String nickname;
 
 	private static final double DISABLE_REFRESH_TIME = 2.0;
 	private static final double TIME_TO_AUTO_REFRESH = 10.0 + DISABLE_REFRESH_TIME;
@@ -125,15 +128,26 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 		retriesLeft = ConnectionCallback.MAX_CONNECTION_RETRIES;
 
 		conn.addConnectionCallBack(this);
-		joinedId = conn.getJoinedGameId();
 		connected = conn.isConnected();
+		nickname = GameClass.getMultiplayerNickname();
 		if (connected)
 			initialize();
 	}
 
+	@Override
+	public synchronized void clean() {
+		super.clean();
+		conn.removeConnectionCallBack(this);
+	}
+
 	private synchronized void initializeAreas() {
+		CREATE_GAME_TEXT = LanguageClass.getString(CREATE_GAME_CODE);
+		JOIN_GAME_TEXT = LanguageClass.getString(JOIN_GAME_CODE);
+		NOT_CONNECTED_TEXT = LanguageClass.getString(NOT_CONNECTED_CODE);
 		{
-			final int text_width1 = Draw.getStrWidth(TEXT_PAINT, CONNECTED_TEXT);
+			final String maxConnectedText = LanguageClass.getString(CONNECTED_CODE,
+					Draw.repeatString("#", Player.NICKNAME_MAX_CHARACTERS));
+			final int text_width1 = Draw.getStrWidth(TEXT_PAINT, maxConnectedText);
 			final int text_width2 = Draw.getStrWidth(TEXT_PAINT, NOT_CONNECTED_TEXT);
 			final float width = Math.max(text_width1, text_width2);
 			//			CONNECTED_AREA = new RectF(0, 0, width, TEXT_HEIGHT);
@@ -144,13 +158,6 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 			final int text_width = Draw.getStrWidth(TEXT_PAINT, CREATE_GAME_TEXT);
 			CREATE_GAME_AREA = new MyButton(0, 0, text_width + IN_PADDING * 2, TEXT_HEIGHT + IN_PADDING * 2);
 			CREATE_GAME_AREA.offset(OUT_PADDING, maxY - OUT_PADDING - CREATE_GAME_AREA.height());
-		}
-		{
-			final int text_width = Draw.getStrWidth(TEXT_PAINT, WAITING_TEXT);
-			final float padd = OUT_PADDING - IN_PADDING;
-			final float height = IN_PADDING * 2 + TEXT_HEIGHT;
-			final float y = CREATE_GAME_AREA.bottom + OUT_PADDING;
-			WAITING_AREA = new RectF(maxX / 2 - text_width / 2 - padd, y, maxX / 2 + text_width / 2 + padd, y + height);
 		}
 		{
 			REFRESH_BUTTON = new MyButton(0, 0, REFRESH_AREA_SIZE, REFRESH_AREA_SIZE);
@@ -170,9 +177,7 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 			GAMES_DIST_Y = GAME_AREA.height();
 		}
 		{
-			final int text_width1 = Draw.getStrWidth(SMALL_LEFT_TEXT_PAINT, JOIN_GAME_TEXT);
-			final int text_width2 = Draw.getStrWidth(SMALL_LEFT_TEXT_PAINT, UNJOIN_GAME_TEXT);
-			final float width = Math.max(text_width1, text_width2) + IN_PADDING * 2;
+			final float width = Draw.getStrWidth(SMALL_LEFT_TEXT_PAINT, JOIN_GAME_TEXT) + IN_PADDING * 2;
 			final float height = SMALL_TEXT_HEIGHT + IN_PADDING * 2;
 			JOIN_GAME_AREA = new MyButton(0, 0, width, height);
 			JOIN_GAME_AREA.offset(GAME_AREA.right - JOIN_GAME_AREA.width(),
@@ -199,7 +204,7 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 		{
 			String str;
 			if (connected) {
-				str = CONNECTED_TEXT;
+				str = LanguageClass.getString(CONNECTED_CODE, nickname);
 			} else {
 				if (retriesLeft == 0)
 					str = "error connecting";
@@ -239,11 +244,8 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 						canvas.translate(0, GAMES_DIST_Y * i);
 						canvas.drawText(text, GAME_AREA.left + IN_PADDING, GAME_AREA.centerY() + SMALL_TEXT_HEIGHT / 2,
 								SMALL_LEFT_TEXT_PAINT);
-						String joinStr;
-						if (joinedId != null && joinedId.equals(gameDefinition.gameId))
-							joinStr = UNJOIN_GAME_TEXT;
-						else
-							joinStr = JOIN_GAME_TEXT;
+
+						String joinStr = JOIN_GAME_TEXT;
 						drawButton(canvas, joinStr, JOIN_GAME_AREA, SMALL_TEXT_PAINT);
 						canvas.drawRect(GAME_AREA, GAME_AREA_PEN);
 						canvas.translate(0, -GAMES_DIST_Y * i);
@@ -277,12 +279,7 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 						float by = JOIN_GAME_AREA.top + GAMES_DIST_Y * i;
 						if (y >= by && y <= by + JOIN_GAME_AREA.height()) {
 							final String gameId = existingGames.get(i).gameId;
-							if (joinedId != null && joinedId.equals(gameId)) {
-								conn.unjoinGame(gameId);
-								refreshGames();
-							} else {
-								conn.joinExistingGame(gameId);
-							}
+							conn.joinGame(gameId);
 						}
 					}
 				}
@@ -316,11 +313,7 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 	}
 
 	@Override
-	public synchronized void gameStarted(boolean master) {
-		if (master)
-			game.setGameState(GameState.SendInitializingInformation);
-		else
-			game.setGameState(GameState.WaitMaster);
+	public void gameStarted(boolean master) {
 	}
 
 	@Override
@@ -329,14 +322,17 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 	}
 
 	@Override
-	public synchronized void joinedGame(String gameId) {
-		joinedId = gameId;
-		refreshGames();
+	public synchronized void hostedGame(String gameId) {
+		game.setGameState(GameState.LobbyMenu);
+	}
+
+	@Override
+	public void joinedGame(String gameId, String playerNickname) {
+		game.setGameState(GameState.LobbyMenu);
 	}
 
 	@Override
 	public synchronized void unjoinedGame() {
-		joinedId = null;
 	}
 
 	@Override
@@ -346,6 +342,9 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 
 	@Override
 	public void oponentDisconnected() {
-		//TODO add a message that oponent has disconnected (in the LobbyScreen please!!!!)
 	}
+
+	//	@Override
+	//	public void setEnemyNickname(String nickname) {
+	//	}
 }

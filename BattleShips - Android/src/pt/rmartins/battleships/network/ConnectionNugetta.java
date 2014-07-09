@@ -6,6 +6,7 @@ import java.util.List;
 
 import pt.rmartins.battleships.network.ConnectionCallback.GameDefinition;
 import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.objects.Ship;
 import pt.rmartins.battleships.objects.ShipClass;
 import pt_rmartins_battleships.ngdl.nobjects.NuggCoordinate;
@@ -20,6 +21,8 @@ import android.util.Log;
 
 import com.nuggeta.NuggetaPlug;
 import com.nuggeta.network.Message;
+import com.nuggeta.ngdl.nobjects.CreateGameResponse;
+import com.nuggeta.ngdl.nobjects.CreateGameStatus;
 import com.nuggeta.ngdl.nobjects.GameRunningState;
 import com.nuggeta.ngdl.nobjects.GameStateChange;
 import com.nuggeta.ngdl.nobjects.GetGamesResponse;
@@ -32,8 +35,7 @@ import com.nuggeta.ngdl.nobjects.NPlayer;
 import com.nuggeta.ngdl.nobjects.NuggetaQuery;
 import com.nuggeta.ngdl.nobjects.PlayerEnterGame;
 import com.nuggeta.ngdl.nobjects.PlayerUnjoinGame;
-import com.nuggeta.ngdl.nobjects.SearchImmediateGameResponse;
-import com.nuggeta.ngdl.nobjects.SearchImmediateGameStatus;
+import com.nuggeta.ngdl.nobjects.SetPlayerNameResponse;
 import com.nuggeta.ngdl.nobjects.StartResponse;
 import com.nuggeta.ngdl.nobjects.StartStatus;
 import com.nuggeta.ngdl.nobjects.UnjoinGameResponse;
@@ -45,6 +47,7 @@ public class ConnectionNugetta implements Connection {
 
 	private NuggetaPlug nuggetaPlug;
 	private String myGameID;
+	private NPlayer player;
 
 	private boolean connected;
 	private GameRunningState gameState;
@@ -92,12 +95,19 @@ public class ConnectionNugetta implements Connection {
 	}
 
 	private void handleMessage(final Message message) {
+		Log.i(TAG, "Received a message : " + message.getClass().getSimpleName());
+
 		if (message instanceof StartResponse) {
 			StartResponse startResponse = (StartResponse) message;
 			if (startResponse.getStartStatus() == StartStatus.READY) {
 				connected = true;
 				Log.i(TAG, "Connection Ready with Nuggeta");
 				callbackHelper.connected();
+				player = startResponse.getPlayer();
+				if (!player.isNameSet()) {
+					player.setName(GameClass.getMultiplayerNickname());
+					nuggetaPlug.setPlayerName(GameClass.getMultiplayerNickname());
+				}
 			} else {
 				if (startResponse.getStartStatus() == StartStatus.WARNED) {
 					Log.i(TAG, "Connection warned with Nuggeta");
@@ -119,15 +129,25 @@ public class ConnectionNugetta implements Connection {
 					nuggetaPlug.start();
 				}
 			}
+			//		} else if (message instanceof GetPlayerProfileResponse) {
+			//			GetPlayerProfileResponse profileResponse = (GetPlayerProfileResponse) message;
+			//			final GetPlayerProfileStatus getPlayerProfileStatus = profileResponse.getGetPlayerProfileStatus();
+			//			if (getPlayerProfileStatus == GetPlayerProfileStatus.SUCCESS) {
+			//				NPlayerProfile playerProfile = profileResponse.getProfile();
+			//				final String nickname = playerProfile.getNickname();
+			//				callbackHelper.setEnemyNickname(nickname);
+			//			}
 		} else if (message instanceof GetGamesResponse) {
 			GetGamesResponse getGamesResponse = (GetGamesResponse) message;
 			final List<NGame> games = getGamesResponse.getGames();
 			final List<GameDefinition> gameDefinitions = new ArrayList<GameDefinition>(games.size());
 			for (NGame nGame : games) {
 				final List<NPlayer> players = nGame.getPlayers();
-				if (players.isEmpty()) {
-					nuggetaPlug.stopGame(nGame.getId());
-				} else {
+				//				if (players.isEmpty()) {
+				//					nuggetaPlug.stopGame(nGame.getId());
+				//				} else {
+
+				if (players.size() > 0 && players.size() < nGame.getGameCharacteristics().getMaxPlayer()) {
 					final NuggGameMode nuggGameDef = nGame.getMatchMakingConditions().getGameDefinition();
 					GameDefinition gameDef = new GameDefinition(nGame.getId(), nuggGameDef.getFleet(),
 							nuggGameDef.getGameModeStr(), nuggGameDef.getMaxX(), nuggGameDef.getMaxY());
@@ -143,9 +163,17 @@ public class ConnectionNugetta implements Connection {
 			if (joinGameResponse.getJoinGameStatus() == JoinGameStatus.ACCEPTED) {
 				final NGame game = joinGameResponse.getGame();
 				myGameID = game.getId();
-				host = false;
-				Log.i(TAG, "Joined Game: " + myGameID);
-				callbackHelper.joinedGame(myGameID);
+				final NPlayer owner = game.getOwner();
+				if (owner.getID().equals(player.getID())) {
+					host = true;
+					Log.i(TAG, "Hosted Game: " + myGameID);
+					callbackHelper.hostedGame(myGameID);
+				} else {
+					host = false;
+					Log.i(TAG, "Joined Game: " + myGameID);
+					callbackHelper.joinedGame(myGameID, owner.getName());
+					callbackHelper.joinedGame(myGameID, owner.getName());
+				}
 				{
 					final NuggGameMode nuggGameDef = game.getMatchMakingConditions().getGameDefinition();
 					GameDefinition gameDefinition = new GameDefinition(myGameID, nuggGameDef.getFleet(),
@@ -162,20 +190,18 @@ public class ConnectionNugetta implements Connection {
 				Log.i(TAG, "Unjoined Game: " + unjoinGameResponse.getGameId());
 				callbackHelper.unjoinedGame();
 			}
-			//		} else if (message instanceof PlayerUnjoinGame) {
-			//			PlayerUnjoinGame playerUnjoinGame = (PlayerUnjoinGame) message;
-			//			Log.i(TAG, "Player Unjoined Game: " + playerUnjoinGame.getGameId());
 		} else if (message instanceof GameStateChange) {
 			GameStateChange gameStateChange = (GameStateChange) message;
 			gameState = gameStateChange.getGameRunningState();
-			if (gameStateChange.getGameRunningState() == GameRunningState.RUNNING) {
-				callbackHelper.gameStarted(host);
-			}
+			//			if (gameStateChange.getGameRunningState() == GameRunningState.RUNNING) {
+			//				callbackHelper.gameStarted(host);
+			//			}
 			Log.i(TAG, "GameStateChange: " + gameState);
 		} else if (message instanceof PlayerEnterGame) {
 			PlayerEnterGame playerEnterGame = (PlayerEnterGame) message;
 			final NPlayer player = playerEnterGame.getPlayer();
 			Log.i(TAG, "PlayerEnterGame: id: " + player.getID() + " name: " + player.getName());
+			callbackHelper.joinedGame(myGameID, player.getName());
 		} else if (message instanceof NuggGameInitialization) {
 			NuggGameInitialization nuggGameInitialization = (NuggGameInitialization) message;
 			final boolean hostPlayingFirst = nuggGameInitialization.isHostPlayingFirst();
@@ -212,18 +238,23 @@ public class ConnectionNugetta implements Connection {
 						.getCounters()));
 				callbackHelper.receiveShotsAndCounters(shots, counters);
 			}
-		} else if (message instanceof SearchImmediateGameResponse) {
-			SearchImmediateGameResponse gameResponse = (SearchImmediateGameResponse) message;
-			final SearchImmediateGameStatus gameStatus = gameResponse.getSearchImmediateGameStatus();
-			if (gameStatus == SearchImmediateGameStatus.ACCEPTED) {
-				myGameID = gameResponse.getGame().getId();
-				Log.i(TAG, "Created/Joined Game: " + myGameID);
-				host = true;
-				callbackHelper.joinedGame(myGameID);
+		} else if (message instanceof CreateGameResponse) {
+			CreateGameResponse gameResponse = (CreateGameResponse) message;
+			final CreateGameStatus gameStatus = gameResponse.getCreateGameStatus();
+			if (gameStatus == CreateGameStatus.SUCCESS) {
+				final String gameId = gameResponse.getGameId();
+				Log.i(TAG, "Created Game: " + gameId);
+				joinGame(gameId);
 			}
 		} else if (message instanceof PlayerUnjoinGame) {
-			callbackHelper.oponentDisconnected();
-			callbackHelper.receiveOponentDisconnected();
+			PlayerUnjoinGame playerUnjoinGame = (PlayerUnjoinGame) message;
+			if (playerUnjoinGame.getPlayer().getID().equals(player.getID())) {
+
+			} else {
+				callbackHelper.oponentDisconnected();
+				callbackHelper.receiveOponentDisconnected();
+			}
+		} else if (message instanceof SetPlayerNameResponse) { // ignore...
 		} else {
 			Log.i(TAG, "Received unhandled message : " + message);
 		}
@@ -237,6 +268,16 @@ public class ConnectionNugetta implements Connection {
 	@Override
 	public void addPlayCallBack(PlayCallback callback) {
 		callbackHelper.addPlayCallBack(callback);
+	}
+
+	@Override
+	public void removeConnectionCallBack(ConnectionCallback callback) {
+		callbackHelper.removeConnectionCallBack(callback);
+	}
+
+	@Override
+	public void removePlayCallBack(PlayCallback callback) {
+		callbackHelper.removePlayCallBack(callback);
 	}
 
 	@Override
@@ -364,15 +405,16 @@ public class ConnectionNugetta implements Connection {
 
 	@Override
 	public void closeConnection() {
-		exitCurrentGame();
+		if (host)
+			unHostGame(myGameID);
+		else
+			unJoinGame(myGameID);
 		nuggetaPlug.stop();
 	}
 
 	@Override
 	public void createGame(String gameModeStr, List<Integer> fleet, int maxX, int maxY) {
 		if (connected) {
-			//nuggetaPlug.createGame();
-
 			NMatchMakingConditions matchMakingConditions = new NMatchMakingConditions();
 			matchMakingConditions.setMatchMakingType(MatchMakingType.SEARCH_GAME);
 			NuggGameMode gameDefinition = new NuggGameMode();
@@ -382,33 +424,36 @@ public class ConnectionNugetta implements Connection {
 			gameDefinition.setMaxY(maxY);
 			matchMakingConditions.setGameDefinition(gameDefinition);
 
-			NuggetaQuery dbQuery = new NuggetaQuery();
-			dbQuery.setQuery("$WHERE Players.size > 0");
-
-			nuggetaPlug.searchImmediateGameByConditions(dbQuery, matchMakingConditions);
+			final NGame nGame = new NGame();
+			nGame.setMatchMakingConditions(matchMakingConditions);
+			nuggetaPlug.createGame(nGame);
 		}
 	}
 
-	//	private void joinCreatedGame(String gameId) {
+	//	private void getPlayerProfile(String playerId) {
 	//		if (connected) {
-	//			exitCurrentGame();
-	//			nuggetaPlug.joinGame(gameId);
-	//			master = true;
+	//			nuggetaPlug.getPlayerProfileByPlayerId(playerId);
 	//		}
 	//	}
 
 	@Override
-	public void joinExistingGame(String gameId) {
+	public void joinGame(String gameId) {
 		if (connected) {
-			exitCurrentGame();
 			nuggetaPlug.joinGame(gameId);
 		}
 	}
 
 	@Override
-	public void unjoinGame(String gameId) {
+	public void unJoinGame(String gameId) {
 		if (connected) {
 			nuggetaPlug.unjoinGame(gameId);
+		}
+	}
+
+	@Override
+	public void unHostGame(String gameId) {
+		if (connected) {
+			nuggetaPlug.stopGame(gameId);
 		}
 	}
 
@@ -416,24 +461,36 @@ public class ConnectionNugetta implements Connection {
 	public void refreshGames() {
 		if (connected) {
 			NuggetaQuery dbQuery = new NuggetaQuery();
-			dbQuery.setQuery("$WHERE Players.size >= 0");
+			dbQuery.setQuery("$WHERE Players.size > 0");
 			nuggetaPlug.getGames(dbQuery);
-
-			//			nuggetaPlug.getPlayerProfile();
-			//			nuggetaPlug.getPlayerWallet();
-		}
-	}
-
-	@Override
-	public void exitCurrentGame() {
-		if (connected) {
-			if (myGameID != null)
-				nuggetaPlug.unjoinGame(myGameID);
 		}
 	}
 
 	@Override
 	public String getJoinedGameId() {
 		return myGameID;
+	}
+
+	@Override
+	public void close() {
+		if (connected && myGameID != null) {
+			if (host)
+				nuggetaPlug.stopGame(myGameID);
+			else
+				nuggetaPlug.unjoinGame(myGameID);
+		}
+	}
+
+	@Override
+	public boolean isHost() {
+		return host;
+	}
+
+	@Override
+	public void setNickname(String nickname) {
+		if (connected) {
+			player.setName(GameClass.getMultiplayerNickname());
+			nuggetaPlug.setPlayerName(GameClass.getMultiplayerNickname());
+		}
 	}
 }

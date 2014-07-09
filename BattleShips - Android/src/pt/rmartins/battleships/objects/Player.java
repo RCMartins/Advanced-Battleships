@@ -28,6 +28,9 @@ public interface Player {
 	public static final int GodlikeTurns = 9;
 	public static final int HolyShitTurns = 10; // (Beyond Godlike!)
 
+	public static final int NICKNAME_MAX_CHARACTERS = 14;
+	public static final String PREFERENCES_NICKNAME_CODE = "nickname";
+
 	public boolean canPlaceShip();
 
 	public void chooseTarget();

@@ -58,21 +58,21 @@ Shield_Mode {
 Time_Limit_Mode {
 	Hits: NormalShot 3;
 	MessagesMode: Normal;
-	TimeLimit: 300, 10;
+	TimeLimit: 90, 10;
 	BonusPlay {
 		FirstBlood: ExtraTurn(NormalShot 1);
 		DoubleKill: ExtraTurn(NormalShot 1);
 		TripleKill: ExtraTurn(NormalShot 3);
 	}
 	Ships {
-		Submarino: 		Shield(0.1);
+		//Submarino: 		Shield(0.1);
 	}
 }
 
 Time_Limit_Mode_2 {
 	Hits: NormalShot 3;
 	MessagesMode: Normal;
-	TimeLimit: 90, 10;
+	TimeLimit: 120, 10;
 	BonusPlay {
 		FirstBlood: ExtraTurn(NormalShot 1);
 		DoubleKill: ExtraTurn(NormalShot 1);

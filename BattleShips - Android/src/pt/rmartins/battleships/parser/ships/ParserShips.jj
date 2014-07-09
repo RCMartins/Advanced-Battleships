@@ -65,8 +65,10 @@ TOKEN :
 {
   < NUM : (< DIGIT >)+ | "-" (< DIGIT >)+ >
 | < ID : (< CHAR >) (< CHAR >)* >
+| < HEX : (< HEX_CHAR >)+ >
 | < #DIGIT : [ "0"-"9" ] >
 | < #CHAR : ["a"-"z", "A"-"Z", "_", "-", "\u00C0"-"\u00FF"] >
+| < #HEX_CHAR : ["A"-"F", "0"-"9"] > 
 }
 
 void main() :{ List<Locale> languages; int version; Token t; }
@@ -96,6 +98,8 @@ void readShip(List<Locale> languages) :
       index++;
     }
   )*
+  < SEMICOLON >
+  ( < NUM > | < HEX > )
   < SEMICOLON >
   parts = readCoordinates()
   {

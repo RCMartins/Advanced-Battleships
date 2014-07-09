@@ -40,12 +40,20 @@ public abstract class UserInterfaceClass implements UserInterface {
 		BORDER_BUTTON_PAINT.setColor(COLOR_BORDER_BUTTON);
 	}
 
+	private static int BACKUP_COLOR;
+
 	protected void drawButton(Canvas canvas, String text, RectF rect, Paint textPaint) {
-		Paint buttonBackPaint;
-		if (rect instanceof MyButton && ((MyButton) rect).isButtonDown())
-			buttonBackPaint = DOWN_BUTTON_PAINT;
-		else
-			buttonBackPaint = NORMAL_BUTTON_PAINT;
+		Paint buttonBackPaint = NORMAL_BUTTON_PAINT;
+		if (rect instanceof MyButton) {
+			final MyButton myButton = (MyButton) rect;
+			if (myButton.isButtonDown()) {
+				buttonBackPaint = DOWN_BUTTON_PAINT;
+			}
+			if (!myButton.isEnabled()) {
+				BACKUP_COLOR = textPaint.getColor();
+				textPaint.setColor(Color.GRAY);
+			}
+		}
 		canvas.drawRect(rect, buttonBackPaint);
 		canvas.drawRect(rect, BORDER_BUTTON_PAINT);
 
@@ -58,6 +66,13 @@ public abstract class UserInterfaceClass implements UserInterface {
 			canvas.drawText(str2, rect.centerX(), rect.centerY() + IN_PADDING / 2 + textHeight, textPaint);
 		} else
 			canvas.drawText(text, rect.centerX(), rect.centerY() + textHeight / 2, textPaint);
+
+		if (rect instanceof MyButton) {
+			final MyButton myButton = (MyButton) rect;
+			if (!myButton.isEnabled()) {
+				textPaint.setColor(BACKUP_COLOR);
+			}
+		}
 	}
 
 	protected boolean buttonDownAndUp(int action, float x, float y, MyButton rect) {
@@ -99,12 +114,19 @@ public abstract class UserInterfaceClass implements UserInterface {
 		}
 
 		final MyButton button;
-		if (alignType == ButtonAlignType.Bottom) {
+		if (alignType == ButtonAlignType.Top) {
+			button = new MyButton(x - text_width / 2 - IN_PADDING, y, x + text_width / 2 + IN_PADDING, y
+					+ button_height);
+		} else if (alignType == ButtonAlignType.Bottom) {
 			button = new MyButton(x - text_width / 2 - IN_PADDING, y - button_height, x + text_width / 2 + IN_PADDING,
 					y);
 		} else {
 			button = null;
 		}
 		return button;
+	}
+
+	@Override
+	public void clean() {
 	}
 }

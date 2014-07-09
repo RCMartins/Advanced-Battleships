@@ -1,7 +1,7 @@
 package pt.rmartins.battleships.network;
 
-import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import pt.rmartins.battleships.objects.Coordinate;
 import pt.rmartins.battleships.objects.Ship;
@@ -16,12 +16,12 @@ public class ConnectionNuggetaCallBacks implements ConnectionCallback, PlayCallb
 		public abstract void run(PlayCallback callback);
 	}
 
-	private final List<ConnectionCallback> connectionCallbacks;
-	private final List<PlayCallback> playCallbacks;
+	private final ConcurrentLinkedQueue<ConnectionCallback> connectionCallbacks;
+	private final ConcurrentLinkedQueue<PlayCallback> playCallbacks;
 
 	public ConnectionNuggetaCallBacks() {
-		connectionCallbacks = new LinkedList<ConnectionCallback>();
-		playCallbacks = new LinkedList<PlayCallback>();
+		connectionCallbacks = new ConcurrentLinkedQueue<ConnectionCallback>();
+		playCallbacks = new ConcurrentLinkedQueue<PlayCallback>();
 	}
 
 	public synchronized void addConnectionCallBack(ConnectionCallback callback) {
@@ -30,6 +30,14 @@ public class ConnectionNuggetaCallBacks implements ConnectionCallback, PlayCallb
 
 	public synchronized void addPlayCallBack(PlayCallback callback) {
 		playCallbacks.add(callback);
+	}
+
+	public synchronized void removeConnectionCallBack(ConnectionCallback callback) {
+		connectionCallbacks.remove(callback);
+	}
+
+	public synchronized void removePlayCallBack(PlayCallback callback) {
+		playCallbacks.remove(callback);
 	}
 
 	public synchronized void sendConnectionCallBack(ForAllConnection forAll) {
@@ -143,9 +151,16 @@ public class ConnectionNuggetaCallBacks implements ConnectionCallback, PlayCallb
 	}
 
 	@Override
-	public synchronized void joinedGame(String gameId) {
+	public synchronized void hostedGame(String gameId) {
 		for (ConnectionCallback callback : connectionCallbacks) {
-			callback.joinedGame(gameId);
+			callback.hostedGame(gameId);
+		}
+	}
+
+	@Override
+	public synchronized void joinedGame(String gameId, String playerNickname) {
+		for (ConnectionCallback callback : connectionCallbacks) {
+			callback.joinedGame(gameId, playerNickname);
 		}
 	}
 

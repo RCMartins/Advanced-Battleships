@@ -40,9 +40,12 @@ public interface ConnectionCallback {
 
 	public void refreshGames(List<GameDefinition> existingGames);
 
-	public void joinedGame(String gameId);
+	public void hostedGame(String gameId);
+
+	public void joinedGame(String gameId, String playerNickname);
 
 	public void unjoinedGame();
 
 	public void oponentDisconnected();
+
 }

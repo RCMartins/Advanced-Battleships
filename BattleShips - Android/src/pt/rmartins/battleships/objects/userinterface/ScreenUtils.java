@@ -94,6 +94,9 @@ public abstract class ScreenUtils extends UserInterfaceClass {
 			updateText();
 		}
 
+		canvas.save();
+		canvas.clipRect(GAME_INFO_AREA);
+
 		final float TEXT_HEIGHT = Draw.getStrHeight(LEFT_TEXT_PAINT);
 		final float dy = TEXT_HEIGHT + OUT_PADDING * 2;
 		float x = GAME_INFO_AREA.left;
@@ -216,5 +219,7 @@ public abstract class ScreenUtils extends UserInterfaceClass {
 		//		for (Turn turn : turnGameModes) {
 		//
 		//		}
+
+		canvas.restore();
 	}
 }

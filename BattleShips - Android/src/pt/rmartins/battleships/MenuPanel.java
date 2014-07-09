@@ -7,6 +7,7 @@ import pt.rmartins.battleships.objects.userinterface.UserInterface;
 import android.app.Activity;
 import android.graphics.Canvas;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -183,6 +184,14 @@ public class MenuPanel extends SurfaceView implements SurfaceHolder.Callback, My
 	public void onDestroy() {
 		if (game != null)
 			game.closeResources();
+	}
+
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		if (game != null) {
+			return game.dispatchKeyEvent(event);
+		} else
+			return super.dispatchKeyEvent(event);
 	}
 
 }

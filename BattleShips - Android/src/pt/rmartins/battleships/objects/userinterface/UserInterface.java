@@ -19,4 +19,6 @@ public interface UserInterface {
 	 * @return true is consumed, else default back
 	 */
 	public boolean backPressed();
+
+	public void clean();
 }

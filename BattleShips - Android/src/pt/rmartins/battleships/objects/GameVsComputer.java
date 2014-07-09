@@ -19,6 +19,7 @@ import pt.rmartins.battleships.objects.userinterface.PlacingShipsScreen;
 import pt.rmartins.battleships.objects.userinterface.PlayInterface;
 import pt.rmartins.battleships.objects.userinterface.PlayingScreen;
 import android.app.Activity;
+import android.view.KeyEvent;
 
 public class GameVsComputer extends GameClass {
 
@@ -289,5 +290,10 @@ public class GameVsComputer extends GameClass {
 	@Override
 	public void requestRemake(Player _playerRequesting) {
 		setGameState(GameState.PlacingShips);
+	}
+
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		return false;
 	}
 }

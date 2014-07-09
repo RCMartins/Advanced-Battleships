@@ -19,6 +19,7 @@ import android.view.MotionEvent;
 
 public class MainMenu extends UserInterfaceClass {
 
+	private static final int CAMPAIGN_CODE = R.string.mainmenu_campaign;
 	private static final int ONE_PLAYER_CODE = R.string.mainmenu_1player;
 	private static final int TWO_PLAYERS_CODE = R.string.mainmenu_2players;
 	private static final int OPTIONS_CODE = R.string.mainmenu_options;
@@ -26,10 +27,10 @@ public class MainMenu extends UserInterfaceClass {
 
 	private static float BUTTON_TEXT_SIZE = 30f;
 
-	private String ONE_PLAYER_TEXT, TWO_PLAYERS_TEXT, OPTIONS_TEXT;
+	private String CAMPAIGN_TEXT, ONE_PLAYER_TEXT, TWO_PLAYERS_TEXT, OPTIONS_TEXT;
 
 	private static Paint TEXT_PAINT;
-	private MyButton ONE_PLAYER_BUTTON, TWO_PLAYERS_BUTTON, OPTIONS_BUTTON;
+	private MyButton CAMPAIGN_BUTTON, ONE_PLAYER_BUTTON, TWO_PLAYERS_BUTTON, OPTIONS_BUTTON;
 	private RectF VERSION_AREA;
 
 	private final float maxX;
@@ -62,6 +63,7 @@ public class MainMenu extends UserInterfaceClass {
 	}
 
 	private synchronized void initialize() {
+		CAMPAIGN_TEXT = LanguageClass.getString(CAMPAIGN_CODE);
 		ONE_PLAYER_TEXT = LanguageClass.getString(ONE_PLAYER_CODE);
 		TWO_PLAYERS_TEXT = LanguageClass.getString(TWO_PLAYERS_CODE);
 		OPTIONS_TEXT = LanguageClass.getString(OPTIONS_CODE);
@@ -89,8 +91,7 @@ public class MainMenu extends UserInterfaceClass {
 		drawButton(canvas, OPTIONS_TEXT, OPTIONS_BUTTON, TEXT_PAINT);
 
 		final String versionStr = LanguageClass.getString(VERSION_CODE, Game.GAMEVERSION);
-		canvas.drawText(versionStr, VERSION_AREA.centerX(),
-				VERSION_AREA.bottom, TEXT_PAINT);
+		canvas.drawText(versionStr, VERSION_AREA.centerX(), VERSION_AREA.bottom, TEXT_PAINT);
 	}
 
 	@Override
@@ -100,9 +101,9 @@ public class MainMenu extends UserInterfaceClass {
 		final int action = event.getAction();
 
 		if (buttonDownAndUp(action, x, y, ONE_PLAYER_BUTTON)) {
-			newGame.setGame(new GameVsComputer(null, exitGame));
+			newGame.setGame(new GameVsComputer(activity, exitGame));
 		} else if (buttonDownAndUp(action, x, y, TWO_PLAYERS_BUTTON)) {
-			newGame.setGame(new GameVsPlayer(null, exitGame));
+			newGame.setGame(new GameVsPlayer(activity, exitGame));
 		} else if (buttonDownAndUp(action, x, y, OPTIONS_BUTTON)) {
 			newGame.setGUI(new OptionsScreen((int) maxX, (int) maxY, activity, exitGame));
 		}

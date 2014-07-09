@@ -35,8 +35,7 @@ public class OptionsScreen extends UserInterfaceClass {
 
 	private String TITLE_TEXT, LANGUAGE_TEXT, SOUND_TEXT, SOUND_ON_TEXT, SOUND_OFF_TEXT;
 
-	private final float maxX;
-	private final float maxY;
+	private final int maxX, maxY;
 	private final Activity activity;
 	private final Callback backToMainMenu;
 
@@ -70,8 +69,8 @@ public class OptionsScreen extends UserInterfaceClass {
 		RIGHT_TEXT_PAINT.setTextAlign(Paint.Align.RIGHT);
 	}
 
-	private synchronized void initialize() {
-		TEXT_HEIGHT = Draw.getStrHeight(TEXT_PAINT, "Bla");
+	private void initialize() {
+		TEXT_HEIGHT = Draw.getStrHeight(TEXT_PAINT);
 
 		{
 			TITLE_TEXT = LanguageClass.getString(TITLE_CODE);

@@ -6,6 +6,7 @@ import pt.rmartins.battleships.objects.modes.GameMode;
 import pt.rmartins.battleships.objects.modes.GameMode.BonusPlay;
 import pt.rmartins.battleships.sound.SoundType;
 import android.graphics.Canvas;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 public interface Game {
@@ -14,7 +15,12 @@ public interface Game {
 	public static final boolean DEBUG = false;
 	public static final boolean DEBUG2 = false;
 
-	public static final String GAMEVERSION = "0.5";
+	public static final String GAMEVERSION = "0.5c";
+	public static final String PREFERENCES_SETTINGS_FILE_NAME = "settings";
+	public static final String PREFERENCES_INITIALIZED_KEY = "settings_initialized";
+	public static final String PREFERENCES_LOCALE_KEY = "locale";
+	public static final String PREFERENCES_SOUND_KEY = "sound";
+	public static final String PREFERENCES_NICKNAME_KEY = "nickname";
 
 	public enum Mark {
 		None, Water, Water100, Ship, Ship100;
@@ -43,7 +49,7 @@ public interface Game {
 	}
 
 	public static enum GameState {
-		MultiplayerMenu, SendInitializingInformation, WaitMaster,
+		LoginMenu, MultiplayerMenu, LobbyMenu, SendInitializingInformation, WaitMaster,
 
 		Idle,
 
@@ -143,5 +149,7 @@ public interface Game {
 	public void closeResources();
 
 	public void requestRemake(Player playerRequesting);
+
+	public boolean dispatchKeyEvent(KeyEvent event);
 
 }
