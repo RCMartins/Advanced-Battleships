@@ -21,6 +21,7 @@ import pt.rmartins.battleships.objects.Message.MessageUnit;
 import pt.rmartins.battleships.objects.Message.MessageUnit.TypesMessageUnits;
 import pt.rmartins.battleships.objects.PlayerClass.Shot.KindShot;
 import pt.rmartins.battleships.objects.PlayerClass.Shot.SpecialEffectTypes;
+import pt.rmartins.battleships.objects.ai.ComputerAI;
 import pt.rmartins.battleships.objects.modes.GameBonus;
 import pt.rmartins.battleships.objects.modes.GameBonus.ExtraTime;
 import pt.rmartins.battleships.objects.modes.GameMode;
@@ -48,12 +49,12 @@ public class PlayerClass implements Player {
 	protected final Ship[][] quickShips;
 	protected final boolean[][] nearShips;
 
-	protected Coordinate position;
+	protected Coordinate2 position;
 	protected int nextTargetToPlace;
 	protected Lock turnTargetsLockRead, turnTargetsLockWrite;
 	protected final List<Shot> turnTargets, turnTargetsUnmodifiableList;
-	protected List<Coordinate> targetList;
-	protected List<Coordinate> networkCounterList;
+	protected List<Coordinate2> targetList;
+	protected List<Coordinate2> networkCounterList;
 
 	protected Ship selectedShip;
 	protected final List<Ship> shipsLeftToPlace;
@@ -106,14 +107,14 @@ public class PlayerClass implements Player {
 
 		lastTurnKilledShips = new ArrayList<Ship>();
 
-		position = new Coordinate(maxX / 2, maxY / 2);
+		position = new Coordinate2(maxX / 2, maxY / 2);
 		nextTargetToPlace = 0;
 		final ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();
 		turnTargetsLockRead = reentrantReadWriteLock.readLock();
 		turnTargetsLockWrite = reentrantReadWriteLock.writeLock();
 		turnTargets = new ArrayList<Shot>();
 		turnTargetsUnmodifiableList = Collections.unmodifiableList(turnTargets);
-		targetList = new ArrayList<Coordinate>();
+		targetList = new ArrayList<Coordinate2>();
 		ReadWriteLock messagesLock = reentrantReadWriteLock;
 		messagesLockRead = messagesLock.readLock();
 		messagesLockWrite = messagesLock.writeLock();
@@ -154,7 +155,8 @@ public class PlayerClass implements Player {
 			});
 
 			setSelectedShip(shipsLeftToPlace.get(0), true);
-			setPositionToRandomLocation(true);
+			if (!ComputerAI.DEBUG_AI)
+				setPositionToRandomLocation(false);
 		}
 
 		timeOfPlayer = new StopWatch();
@@ -167,10 +169,6 @@ public class PlayerClass implements Player {
 		messages.add(0, m);
 		messagesLockWrite.unlock();
 	}
-
-	// public void addShip(Ship ship) {
-	// ships.add(ship);
-	// }
 
 	@Override
 	public boolean canPlaceShip() {
@@ -262,7 +260,7 @@ public class PlayerClass implements Player {
 		chooseTarget(position);
 	}
 
-	public void chooseTarget(Coordinate coor) {
+	public void chooseTarget(Coordinate2 coor) {
 		if (game.getCurrentPlayer() != this || game.getTurnState() == TurnState.ChooseTargets) {
 			turnTargetsLockWrite.lock();
 			return_label: {
@@ -340,7 +338,7 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public Coordinate getPosition() {
+	public Coordinate2 getPosition() {
 		return position;
 	}
 
@@ -386,7 +384,7 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public Mark markAt(Coordinate coor) {
+	public Mark markAt(Coordinate2 coor) {
 		return marks[coor.x][coor.y];
 	}
 
@@ -406,10 +404,10 @@ public class PlayerClass implements Player {
 			if (!game.isInsideField(selectedShip)) {
 				selectedShip.trimShip(maxX, maxY);
 			} else {
-				position = new Coordinate(nX, nY);
+				position = new Coordinate2(nX, nY);
 			}
 		} else if (game.isInsideField(nX, nY)) {
-			position = new Coordinate(nX, nY);
+			position = new Coordinate2(nX, nY);
 			Shot shot;
 			if ((shot = getNextTargetToPlace()) != null)
 				shot.coordinate = position;
@@ -417,7 +415,7 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public Message messageAt(Coordinate coor) {
+	public Message messageAt(Coordinate2 coor) {
 		return messagesAt[coor.x][coor.y];
 	}
 
@@ -426,7 +424,7 @@ public class PlayerClass implements Player {
 		return messagesAt[x][y];
 	}
 
-	private void setMessageAt(Coordinate coor, Message message) {
+	private void setMessageAt(Coordinate2 coor, Message message) {
 		messagesAt[coor.x][coor.y] = message;
 	}
 
@@ -486,11 +484,11 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public Coordinate rotateShipClockwise() {
+	public Coordinate2 rotateShipClockwise() {
 		if (selectedShip != null) {
 			return selectedShip.rotateClockwise(maxX, maxY);
 		} else {
-			return new Coordinate(0, 0);
+			return new Coordinate2(0, 0);
 		}
 	}
 
@@ -504,7 +502,7 @@ public class PlayerClass implements Player {
 			marks[x][y] = mark;
 	}
 
-	protected void setMarkAt(Coordinate coor, Mark mark) {
+	protected void setMarkAt(Coordinate2 coor, Mark mark) {
 		setMarkAt(coor.x, coor.y, mark);
 	}
 
@@ -606,7 +604,7 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public void setPosition(Coordinate newPosition) {
+	public void setPosition(Coordinate2 newPosition) {
 		position = newPosition;
 	}
 
@@ -618,17 +616,17 @@ public class PlayerClass implements Player {
 			if (justSimpleRandom) {
 				int tries = 0;
 				do {
-					int rotation = GameClass.random.nextInt(ShipClass.getAllRotations(id).size());
+					int rotation = GameClass.randomNotSo.nextInt(ShipClass.getAllRotations(id).size());
 					final int mX = maxX - ShipClass.sizeX(id, rotation) + 1;
 					final int mY = maxY - ShipClass.sizeY(id, rotation) + 1;
-					int x = GameClass.random.nextInt(mX);
-					int y = GameClass.random.nextInt(mY);
+					int x = GameClass.randomNotSo.nextInt(mX);
+					int y = GameClass.randomNotSo.nextInt(mY);
 
 					selectedShip.rotateTo(rotation, maxX, maxY);
 					selectedShip.moveTo(x, y);
 
 					if (canPlaceShip()) {
-						setPosition(new Coordinate(x, y));
+						setPosition(new Coordinate2(x, y));
 						return true;
 					}
 					tries++;
@@ -643,18 +641,18 @@ public class PlayerClass implements Player {
 					selectedShip.moveTo(x, y);
 
 					if (canPlaceShip()) {
-						setPosition(new Coordinate(x, y));
+						setPosition(new Coordinate2(x, y));
 						return true;
 					}
 				}
 			}
 
 		} else if (gameState == GameState.Playing) {
-			final List<Coordinate> allPossiblePositions = new ArrayList<Coordinate>();
+			final List<Coordinate2> allPossiblePositions = new ArrayList<Coordinate2>();
 
 			for (int y = 0; y < maxY; y++) {
 				for (int x = 0; x < maxX; x++) {
-					final Coordinate c = new Coordinate(x, y);
+					final Coordinate2 c = new Coordinate2(x, y);
 					if (messageAt(x, y) == null && !markAt(x, y).isWater()) {
 						boolean found = false;
 						turnTargetsLockRead.lock();
@@ -672,7 +670,7 @@ public class PlayerClass implements Player {
 			}
 
 			if (!allPossiblePositions.isEmpty()) {
-				final int index = GameClass.random.nextInt(allPossiblePositions.size());
+				final int index = GameClass.randomNotSo.nextInt(allPossiblePositions.size());
 				position = allPossiblePositions.get(index);
 				return true;
 			}
@@ -725,7 +723,7 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public Ship shipAt(Coordinate coor) {
+	public Ship shipAt(Coordinate2 coor) {
 		return shipAt(coor.x, coor.y);
 	}
 
@@ -755,12 +753,12 @@ public class PlayerClass implements Player {
 		return false;
 	}
 
-	private static class EffectCoordinate extends Coordinate {
+	private static class EffectCoordinate extends Coordinate2 {
 
 		private final SpecialEffectTypes effect;
 
-		EffectCoordinate(Coordinate coor, SpecialEffectTypes effect) {
-			super(coor);
+		EffectCoordinate(Coordinate2 coor, SpecialEffectTypes effect) {
+			super(coor.x, coor.y);
 			this.effect = effect;
 		}
 
@@ -783,9 +781,9 @@ public class PlayerClass implements Player {
 		game.setTurnState(TurnState.Shooting);
 
 		turnTargetsLockRead.lock();
-		final List<Coordinate> newList = new ArrayList<Coordinate>(turnTargets.size());
-		final List<Coordinate> placedList = new ArrayList<Coordinate>();
-		targetList = new ArrayList<Coordinate>(turnTargets.size());
+		final List<Coordinate2> newList = new ArrayList<Coordinate2>(turnTargets.size());
+		final List<Coordinate2> placedList = new ArrayList<Coordinate2>();
+		targetList = new ArrayList<Coordinate2>(turnTargets.size());
 
 		for (final Shot shot : turnTargets) {
 			newList.add(shot.getCoordinate());
@@ -796,14 +794,14 @@ public class PlayerClass implements Player {
 		}
 		turnTargetsLockRead.unlock();
 
-		List<Coordinate> counterList = new ArrayList<Coordinate>(0);
+		List<Coordinate2> counterList = new ArrayList<Coordinate2>(0);
 		if (game.getPlayerVsSomething() == PlayingMode.PlayerVsComputer || imPlayer1) {
 			List<Double> values = getCounterAttackProbability(targetList);
 			for (int i = 0; i < targetList.size(); i++) {
 				EffectCoordinate shot = (EffectCoordinate) targetList.get(i);
 				if (shot.effect != SpecialEffectTypes.Indestructible) {
 					double value = values.get(i);
-					final double nextDouble = GameClass.random.nextDouble();
+					final double nextDouble = GameClass.randomThings.nextDouble();
 					if (value > 0.0 && nextDouble < value) {
 						counterList.add(shot);
 					}
@@ -833,7 +831,7 @@ public class PlayerClass implements Player {
 
 		final List<MessageUnit> hitedShips = new ArrayList<MessageUnit>(targetList.size());
 
-		for (final Coordinate shot : targetList) {
+		for (final Coordinate2 shot : targetList) {
 			setMessageAt(shot, new Message("", 0, null, null, null, false));
 
 			final Ship ship = enemy.shipAt(shot);
@@ -851,11 +849,11 @@ public class PlayerClass implements Player {
 				}
 			}
 		}
-		for (Coordinate counter : counterList) {
+		for (Coordinate2 counter : counterList) {
 			hitedShips.add(new MessageUnit(TypesMessageUnits.Counter, counter.toStringSmall()));
 		}
 
-		for (final Coordinate shot : targetList) {
+		for (final Coordinate2 shot : targetList) {
 			setMessageAt(shot, null);
 		}
 
@@ -891,17 +889,17 @@ public class PlayerClass implements Player {
 	}
 
 	private void doShotSpecialEffect(Shot shot) {
-		final List<Coordinate> list = shot.getShots();
+		final List<Coordinate2> list = shot.getShots();
 		final SpecialEffectTypes specialEffect = shot.specialEffect();
 		switch (specialEffect) {
 		case None:
 		case Indestructible:
-			for (Coordinate coordinate : shot.getValidShots()) {
+			for (Coordinate2 coordinate : shot.getValidShots()) {
 				targetList.add(new EffectCoordinate(coordinate, specialEffect));
 			}
 			break;
 		case Camera:
-			for (final Coordinate coordinate : list) {
+			for (final Coordinate2 coordinate : list) {
 				if (game.isInsideField(coordinate)) {
 					this.setMarkAt(coordinate, enemy.shipAt(coordinate) == null ? Mark.Water100 : Mark.Ship100);
 				}
@@ -962,16 +960,16 @@ public class PlayerClass implements Player {
 		getBonusFromLastShot();
 
 		if (hits == 0) {
-			for (final Coordinate coor : targetList) {
+			for (final Coordinate2 coor : targetList) {
 				marks[coor.x][coor.y] = Mark.Water100;
 			}
 		} else if (hits == totalShots) {
-			for (final Coordinate coor : targetList) {
+			for (final Coordinate2 coor : targetList) {
 				marks[coor.x][coor.y] = Mark.Ship100;
 			}
 		}
 
-		for (final Coordinate coor : targetList) {
+		for (final Coordinate2 coor : targetList) {
 			setMessageAt(coor, lastMessage);
 		}
 
@@ -990,7 +988,7 @@ public class PlayerClass implements Player {
 		for (final Ship ship : lastTurnKilledShips) {
 			final int explosiveSize = getExplosionSize(ship.getId());
 			if (explosiveSize > 0) {
-				final List<Coordinate> explodeCoordinates = explode(ship, explosiveSize);
+				final List<Coordinate2> explodeCoordinates = explode(ship, explosiveSize);
 				bonusInNextTurn.add(new GameBonus.Explosion(explodeCoordinates));
 			}
 		}
@@ -1017,35 +1015,35 @@ public class PlayerClass implements Player {
 		return 0;
 	}
 
-	private List<Coordinate> explode(Ship ship, int explosiveSize) {
-		final List<Coordinate> result = new ArrayList<Coordinate>();
+	private List<Coordinate2> explode(Ship ship, int explosiveSize) {
+		final List<Coordinate2> result = new ArrayList<Coordinate2>();
 
 		// final Set<Coordinate> possiblePositions = new HashSet<Coordinate>();
-		final List<Coordinate> possiblePositions = new ArrayList<Coordinate>();
-		for (final Coordinate coordinate : ship.getListPieces()) {
+		final List<Coordinate2> possiblePositions = new ArrayList<Coordinate2>();
+		for (final Coordinate2 coordinate : ship.getListPieces()) {
 			for (int j = -2; j <= 2; j++) {
 				for (int i = -2; i <= 2; i++) {
-					final Coordinate newCoor = new Coordinate(coordinate.x + i, coordinate.y + j);
+					final Coordinate2 newCoor = new Coordinate2(coordinate.x + i, coordinate.y + j);
 					if (!possiblePositions.contains(newCoor))
 						possiblePositions.add(newCoor);
 				}
 			}
 		}
-		for (final Coordinate coordinate : ship.getListPieces()) {
+		for (final Coordinate2 coordinate : ship.getListPieces()) {
 			for (int j = -1; j <= 1; j++) {
 				for (int i = -1; i <= 1; i++) {
-					final Coordinate newCoor = new Coordinate(coordinate.x + i, coordinate.y + j);
+					final Coordinate2 newCoor = new Coordinate2(coordinate.x + i, coordinate.y + j);
 					possiblePositions.remove(newCoor);
 				}
 			}
 		}
-		final List<Coordinate> positions = new ArrayList<Coordinate>(possiblePositions);
+		final List<Coordinate2> positions = new ArrayList<Coordinate2>(possiblePositions);
 		Collections.sort(positions);
 		Collections.shuffle(positions, game.getRandomVar());
 
-		final Iterator<Coordinate> iterator = positions.iterator();
+		final Iterator<Coordinate2> iterator = positions.iterator();
 		while (explosiveSize > 0 && iterator.hasNext()) {
-			final Coordinate position = iterator.next();
+			final Coordinate2 position = iterator.next();
 			if (game.isInsideField(position)) {
 				if (messageAt(position) == null) {
 					result.add(position);
@@ -1072,7 +1070,7 @@ public class PlayerClass implements Player {
 			if (ready) {
 				ready = false;
 				if (game.getPlayerVsSomething() == PlayingMode.PlayerVsPlayerNetwork && imPlayer1) {
-					((GameVsPlayer) game).getConnection().sendCancelPlaceShips();
+					((GameVsPlayer) game).getConnection().sendCancelReadyToStart();
 				}
 			}
 		}
@@ -1091,7 +1089,7 @@ public class PlayerClass implements Player {
 	public void fillWater(Ship ship) {
 		if (markAt().isShip()) {
 			final boolean[][] seen = new boolean[maxX][maxY];
-			final Coordinate coor = ship.getListPieces().get(0);
+			final Coordinate2 coor = ship.getListPieces().get(0);
 			fill(coor.x, coor.y, seen, true);
 		}
 	}
@@ -1316,7 +1314,7 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public List<Double> getCounterAttackProbability(List<Coordinate> list) {
+	public List<Double> getCounterAttackProbability(List<Coordinate2> list) {
 		List<Double> results = new ArrayList<Double>(list.size());
 
 		GameMode actualGameMode = mode.getActualGameMode(game.getTurnNumber());
@@ -1338,7 +1336,7 @@ public class PlayerClass implements Player {
 								results.set(i, value + (1 - value) * -shield.get(0));
 							} else {
 								int d = Integer.MAX_VALUE;
-								for (Coordinate c : ship) {
+								for (Coordinate2 c : ship) {
 									d = Math.min(d, c.dist(list.get(i)));
 								}
 								if (d < shield.size()) {
@@ -1355,20 +1353,20 @@ public class PlayerClass implements Player {
 	}
 
 	@Override
-	public void setNetworkCounterList(List<Coordinate> networkCounterList) {
+	public void setNetworkCounterList(List<Coordinate2> networkCounterList) {
 		this.networkCounterList = networkCounterList;
 	}
 
 	@Override
 	public void optimizeShips() {
 		for (Ship ship : ships) {
-			Set<Coordinate> allAround = Coordinate.allAround(ship);
-			for (Coordinate c : allAround) {
+			Set<Coordinate2> allAround = Coordinate2.allAround(ship);
+			for (Coordinate2 c : allAround) {
 				if (game.isInsideField(c))
 					nearShips[c.x][c.y] = true;
 			}
 
-			for (Coordinate c : ship) {
+			for (Coordinate2 c : ship) {
 				quickShips[c.x][c.y] = ship;
 			}
 		}
@@ -1523,7 +1521,7 @@ public class PlayerClass implements Player {
 		}
 
 		private final KindShot kindShot;
-		private Coordinate coordinate;
+		private Coordinate2 coordinate;
 		private boolean isPlaced;
 		private final PlayerClass player;
 
@@ -1539,7 +1537,7 @@ public class PlayerClass implements Player {
 			return kindShot.specialEffect;
 		}
 
-		public Shot(KindShot kindShot, Coordinate coordinate, PlayerClass player) {
+		public Shot(KindShot kindShot, Coordinate2 coordinate, PlayerClass player) {
 			super();
 			this.kindShot = kindShot;
 			this.coordinate = coordinate;
@@ -1571,7 +1569,7 @@ public class PlayerClass implements Player {
 				atLeast1 = 0;
 				for (int j = -1; j <= 1; j++) {
 					for (int i = -1; i <= 1; i++) {
-						final Coordinate c = coordinate.translate(i, j);
+						final Coordinate2 c = coordinate.translate(i, j);
 						if (include(c) && player.game.isInsideField(c))
 							atLeast1++;
 					}
@@ -1584,12 +1582,12 @@ public class PlayerClass implements Player {
 			}
 		}
 
-		public List<Coordinate> getShots() {
+		public List<Coordinate2> getShots() {
 			return Shot.getShots(this.kindShot, this.coordinate);
 		}
 
-		public static List<Coordinate> getShots(KindShot kindShot, Coordinate center) {
-			final List<Coordinate> list = new LinkedList<Coordinate>();
+		public static List<Coordinate2> getShots(KindShot kindShot, Coordinate2 center) {
+			final List<Coordinate2> list = new LinkedList<Coordinate2>();
 
 			switch (kindShot) {
 			case NormalShot:
@@ -1617,9 +1615,9 @@ public class PlayerClass implements Player {
 			return list;
 		}
 
-		public List<Coordinate> getValidShots() {
-			final ArrayList<Coordinate> list = new ArrayList<Coordinate>();
-			for (final Coordinate coor : getShots()) {
+		public List<Coordinate2> getValidShots() {
+			final ArrayList<Coordinate2> list = new ArrayList<Coordinate2>();
+			for (final Coordinate2 coor : getShots()) {
 				if (player.game.isInsideField(coor) && player.messageAt(coor) == null)
 					list.add(coor);
 			}
@@ -1636,7 +1634,7 @@ public class PlayerClass implements Player {
 		// return list;
 		// }
 
-		public boolean include(Coordinate target) {
+		public boolean include(Coordinate2 target) {
 			return Shot.include(this.kindShot, this.coordinate, target);
 		}
 
@@ -1644,7 +1642,7 @@ public class PlayerClass implements Player {
 		// return include()
 		// }
 
-		public static boolean include(KindShot kindShot, Coordinate center, Coordinate target) {
+		public static boolean include(KindShot kindShot, Coordinate2 center, Coordinate2 target) {
 			switch (kindShot) {
 			case NormalShot:
 			case IndestructibleShot:
@@ -1713,7 +1711,7 @@ public class PlayerClass implements Player {
 			return kindShot;
 		}
 
-		public Coordinate getCoordinate() {
+		public Coordinate2 getCoordinate() {
 			return coordinate;
 		}
 

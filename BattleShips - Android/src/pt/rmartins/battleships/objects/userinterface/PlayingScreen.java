@@ -7,7 +7,7 @@ import java.util.Queue;
 
 import pt.rmartins.battleships.R;
 import pt.rmartins.battleships.objects.Callback;
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Fleet;
 import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.Game.GameState;
@@ -76,14 +76,16 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		}
 	}
 
+	private static final float MESSAGES_PLUS_X = 1f;
+	private static final int FIELD_NUMBERS_MAX_CHARS = 5;
+
 	private static ConstantScaled MINIMUM_PADDING, TOP_MENU_TEXT_SIZE, TOP_MENU_SMALL_TEXT_SIZE, WHICH_MENU_TEXT_SIZE,
 			WHICH_MENU_BULLET_SIZE, WHICH_MENU_SELECTED_BULLET_SIZE, WHICH_MENU_BULLET_PADDING,
 			PLACED_TARGETS_STROKE_WIDTH, POSITION_SELECTOR_STROKE_WIDTH, POSITION_SELECTOR_P2_STROKE_WIDTH,
 			MIN_SQUARE_SIZE_MESSAGES, LAST_PLAY_STROKE_WIDTH, LAST_PLAY_DASH_EFFECT_SIZE, MISSILES_IMAGES_SIZE_X,
 			MISSILES_IMAGES_SIZE_Y, MINI_MISSILES_IMAGES_SIZE_X, MINI_MISSILES_IMAGES_SIZE_Y, MINI_FIRE_IMAGES_SIZE_X,
-			MINI_FIRE_IMAGES_SIZE_Y, MESSAGES_PLUS_X, DESTROYED_SHIP_STROKE_WIDTH, FIELD_PAINT_WIDTH,
-			SWIPE_Y_THRESHOLD, POPUP_MARKS_MIN_SIZE, POPUP_MARKS_MAX_SIZE, POPUP_CLOSE_MAX_SIZE,
-			TOP_MESSAGE_ARROW_SIZE;
+			MINI_FIRE_IMAGES_SIZE_Y, DESTROYED_SHIP_STROKE_WIDTH, FIELD_PAINT_WIDTH, SWIPE_Y_THRESHOLD,
+			POPUP_MARKS_MIN_SIZE, POPUP_MARKS_MAX_SIZE, POPUP_CLOSE_MAX_SIZE, TOP_MESSAGE_ARROW_SIZE;
 	private static final int MINI_FIRE_IMAGES_FRAMES = 4;
 
 	private static final List<ConstantScaled> CONSTANTS_LIST;
@@ -108,7 +110,6 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		CONSTANTS_LIST.add(MINI_MISSILES_IMAGES_SIZE_Y = new ConstantScaled(33f));
 		CONSTANTS_LIST.add(MINI_FIRE_IMAGES_SIZE_X = new ConstantScaled(11f));
 		CONSTANTS_LIST.add(MINI_FIRE_IMAGES_SIZE_Y = new ConstantScaled(20f));
-		CONSTANTS_LIST.add(MESSAGES_PLUS_X = new ConstantScaled(1f));
 		CONSTANTS_LIST.add(DESTROYED_SHIP_STROKE_WIDTH = new ConstantScaled(2f));
 		CONSTANTS_LIST.add(FIELD_PAINT_WIDTH = new ConstantScaled(1f));
 		CONSTANTS_LIST.add(SWIPE_Y_THRESHOLD = new ConstantScaled(100f));
@@ -217,6 +218,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		public final List<KindShot> missilesList;
 		public RectF missleRect;
 		public MyButton rect, closeRect;
+		public boolean isRectSmall;
 
 		public Popup() {
 			text = new ArrayList<String>();
@@ -241,10 +243,10 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		}
 	}
 
-	private static final List<Coordinate> waterPiecesList = new ArrayList<Coordinate>(1);
+	private static final List<Coordinate2> waterPiecesList = new ArrayList<Coordinate2>(1);
 	private static final Mark[][] MINI_MARKS_FILL, MINI_MARKS_CLEAR;
 	static {
-		waterPiecesList.add(new Coordinate(0, 0));
+		waterPiecesList.add(new Coordinate2(0, 0));
 
 		final Mark s = Mark.Ship;
 		final Mark w = Mark.Water;
@@ -255,13 +257,13 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 				{ n, n, n, n, n } };
 	}
 
-	private static Paint CENTER_TEXT_PAINT, LEFT_TEXT_PAINT, RIGHT_TEXT_PAINT, RIGHT_TEXT_SMALL_PAINT,
-			WHICH_MENU_PAINT, WHICH_MENU_BULLET_PAINT, WHICH_MENU_SELECTED_BULLET_PAINT;
+	private static Paint CENTER_TEXT_PAINT, LEFT_TEXT_PAINT, RIGHT_TEXT_PAINT, CENTER_TEXT_SMALL_PAINT,
+			RIGHT_TEXT_SMALL_PAINT, WHICH_MENU_PAINT, WHICH_MENU_BULLET_PAINT, WHICH_MENU_SELECTED_BULLET_PAINT;
 	private static Paint FIELD_PEN, BLACK_PEN;
 	private static Paint WATER_PAINT, WATER100_PAINT, SHIP_PAINT, SHIP100_PAINT, SHIP_GOOD_PAINT, SHIP_BAD_PAINT,
 			TRANSPARENT_PAINT, BACKGROUND_PAINT, DESTROYED_SHIP_PAINT;
-	private static Paint PLACED_TARGETS_PAINT, LAST_PLAY_PAINT, LAST_PLAY_TEXT_CENTER_PAINT, LAST_PLAY_TEXT_LEFT_PAINT,
-			POSITION_SELECTOR_PAINT, POSITION_SELECTOR_P2_PAINT, IMAGE_PAINT, IMAGE_50_PAINT;
+	private static Paint PLACED_TARGETS_PAINT, LAST_PLAY_PAINT, LAST_PLAY_TEXT_LEFT_PAINT, POSITION_SELECTOR_PAINT,
+			POSITION_SELECTOR_P2_PAINT, IMAGE_PAINT, IMAGE_50_PAINT, CANT_SELECT_PAINT;
 
 	private static Bitmap MISSILE_IMAGE, MISSILE_INDESTRUCTIBLE_IMAGE, MINI_MISSILE_IMAGE,
 			MINI_MISSILE_INDESTRUCTIBLE_IMAGE, SHIELD_IMAGE;
@@ -270,7 +272,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 	private static Rect[] MINI_FIRE_SOURCE;
 	private static RectF MINI_FIRE_AREA;
 
-	private RectF TIME_TURN_AREA, WHICH_MENU_AREA, FIELD_AREA, FIELD_SQUARE_AREA, MESSAGES_AREA, MY_INFO_AREA;
+	private RectF TIME_AREA, TURN_AREA, WHICH_MENU_AREA, FIELD_AREA, FIELD_SQUARE_AREA, MESSAGES_AREA, MY_INFO_AREA;
 	private RectF SIDE_MISSILES_AREA, POPUP_SMALL_MISSILES_AREA, POPUP_MEDIUM_MISSILES_AREA, MARKS_SQUARE_POPUP_AREA,
 			GAME_INFO_AREA, SHIELD_AREA;
 
@@ -280,7 +282,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			MARKS_POPUP_BUTTONS;
 
 	private static final long TIME_SWIPE_THRESHOLD = 600;
-	private final float SWIPE_X_THRESHOLD;
+	private float SWIPE_X_THRESHOLD;
 
 	private static final long TIME_MARKS_POPUP = 200;
 	private static final double SHOOTING_ANIMATION_TIME = 3.4;
@@ -290,8 +292,12 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 
 	private float NORMAL_TEXT_HEIGHT, SMALL_TEXT_HEIGHT;
 
-	private final float maxX;
-	private final float maxY;
+	private Paint TARGET_PAINT, LAUNCH_PAINT;
+	private final Paint[] FIELD_NUMBERS_PAINT;
+
+	private final Paint[] FIELD_NUMBERS_LAST_PLAY_PAINT;
+
+	private int maxX, maxY;
 	private final Player GUIplayer;
 	private final Game game;
 	private GameState currentState;
@@ -299,12 +305,13 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 	private final Callback finishGameCallBack;
 
 	private Menu menu;
+	private boolean portraitMode;
 	private boolean swipeTouchDown;
 	private float firstX, firstY, lastX, lastY;
 	private int lastGX, lastGY;
 	private long lastTime;
 	private int fleetMAXX, fleetMAXY, fleetSS;
-	private float MESSAGES_TEXT_WIDTH, MESSAGES_TEXT_HEIGHT, MESSAGES_PLUS_Y;
+	private float MESSAGES_TEXT_WIDTH, MESSAGES_TEXT_HEIGHT, MESSAGES_PLUS_Y, MESSAGES_BETWEEN_PARTS_SPACE;
 	private float messagesYOffset;
 	private int lastMessagesSize;
 	private boolean touchDownMessages, newMessage;
@@ -318,15 +325,15 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 	private boolean marksPopupDown, showMarksPopup;
 	private float MARKS_POPUP_SIZE, MINI_MARKS_POPUP_SIZE, marksPopupTargetX, marksPopupTargetY, marksPopupLineX,
 			marksPopupLineY, marksPopupLineX2, marksPopupLineY2;
+	private final boolean[] canSelect;
 	private boolean yourTurn;
+	private final int[] FIELD_NUMBERS_HEIGHT;
 
 	private boolean showSAnimation;
 	private double sAnimationTime;
 	private final List<ShootingAnimation> sAnimationList;
 
 	public PlayingScreen(int maxX, int maxY, Player GUIplayer, Game game, Callback finishGameCallBack) {
-		this.maxX = maxX;
-		this.maxY = maxY;
 		this.GUIplayer = GUIplayer;
 		this.game = game;
 		this.currentState = this.game.getGameState();
@@ -334,7 +341,10 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		this.yourTurn = this.game.getCurrentPlayer() == this.GUIplayer;
 		this.finishGameCallBack = finishGameCallBack;
 
-		menu = Menu.Enemy;
+		if (ComputerAI.DEBUG_AI)
+			menu = Menu.DEBUG_EnemyMarks;
+		else
+			menu = Menu.Enemy;
 
 		swipeTouchDown = false;
 		firstX = firstY = lastX = lastY = lastTime = 0;
@@ -344,20 +354,23 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		touchDownMessages = false;
 		newMessage = false;
 
+		FIELD_NUMBERS_PAINT = new Paint[FIELD_NUMBERS_MAX_CHARS + 1];
+		FIELD_NUMBERS_LAST_PLAY_PAINT = new Paint[FIELD_NUMBERS_MAX_CHARS + 1];
+		FIELD_NUMBERS_HEIGHT = new int[FIELD_NUMBERS_MAX_CHARS + 1];
+
 		pulseTime = 0f;
 		pulse = 0;
 
 		activePopups = new LinkedList<Popup>();
 		pocketPopups = new LinkedList<Popup>();
 
-		SWIPE_X_THRESHOLD = maxX / 3;
-
 		showMarksPopup = false;
 
 		sAnimationList = new ArrayList<ShootingAnimation>();
 		shootingPulse = 0;
+		canSelect = new boolean[5];
 
-		initializeAreas();
+		initializeGUI(maxX, maxY);
 	}
 
 	public static void initializeScreenMultiplier(Context context, float SCREEN_SUPPORT_MULTIPLIER) {
@@ -379,6 +392,9 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 
 		RIGHT_TEXT_PAINT = new Paint(CENTER_TEXT_PAINT);
 		RIGHT_TEXT_PAINT.setTextAlign(Paint.Align.RIGHT);
+
+		CENTER_TEXT_SMALL_PAINT = new Paint(CENTER_TEXT_PAINT);
+		CENTER_TEXT_SMALL_PAINT.setTextSize(TOP_MENU_SMALL_TEXT_SIZE.value);
 
 		RIGHT_TEXT_SMALL_PAINT = new Paint(CENTER_TEXT_PAINT);
 		RIGHT_TEXT_SMALL_PAINT.setTextAlign(Paint.Align.RIGHT);
@@ -441,9 +457,6 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 				LAST_PLAY_DASH_EFFECT_SIZE.value }, 0));
 		LAST_PLAY_PAINT.setColor(COLOR_LAST_PLAY_TEXT);
 
-		LAST_PLAY_TEXT_CENTER_PAINT = new Paint(CENTER_TEXT_PAINT);
-		LAST_PLAY_TEXT_CENTER_PAINT.setColor(COLOR_LAST_PLAY_TEXT);
-
 		LAST_PLAY_TEXT_LEFT_PAINT = new Paint(LEFT_TEXT_PAINT);
 		LAST_PLAY_TEXT_LEFT_PAINT.setColor(COLOR_LAST_PLAY_TEXT);
 
@@ -470,6 +483,11 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 
 		IMAGE_50_PAINT = new Paint(IMAGE_PAINT);
 		IMAGE_50_PAINT.setAlpha((int) (255 * .5f));
+
+		CANT_SELECT_PAINT = new Paint();
+		CANT_SELECT_PAINT.setStyle(Style.FILL);
+		CANT_SELECT_PAINT.setColor(Color.GRAY);
+		CANT_SELECT_PAINT.setAlpha((int) (255 * .85f));
 
 		final Resources res = context.getResources();
 		Bitmap missileImage = BitmapFactory.decodeResource(res, R.drawable.missile_image);
@@ -523,7 +541,13 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		fireImageUpsideDown.recycle();
 	}
 
-	private void initializeAreas() {
+	@Override
+	public void initializeGUI(int maxX, int maxY) {
+		this.maxX = maxX;
+		this.maxY = maxY;
+		this.portraitMode = maxY > maxX;
+
+		SWIPE_X_THRESHOLD = maxX / 4;
 		for (StringCode stringCode : stringCodeList) {
 			stringCode.updateText();
 		}
@@ -536,44 +560,128 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		SMALL_TEXT_HEIGHT = Draw.getStrHeight(RIGHT_TEXT_SMALL_PAINT, "A");
 
 		{
+			final int nBullets = activeMenus.length;
+			float bulletsXLen = (nBullets - 1) * WHICH_MENU_BULLET_PADDING.value / 2f;
+
 			final float height = Math.max(NORMAL_TEXT_HEIGHT, SMALL_TEXT_HEIGHT * 2 + MINIMUM_PADDING.value);
-			TIME_TURN_AREA = new RectF(OUT_PADDING, OUT_PADDING, maxX - OUT_PADDING, OUT_PADDING + height);
+			TIME_AREA = new RectF(OUT_PADDING, OUT_PADDING, maxX / 2 - bulletsXLen, OUT_PADDING + height);
+			TURN_AREA = new RectF(maxX / 2 + bulletsXLen, OUT_PADDING, maxX - OUT_PADDING, OUT_PADDING + height);
+			WHICH_MENU_AREA = new RectF(OUT_PADDING, OUT_PADDING, maxX - OUT_PADDING, OUT_PADDING + height);
 		}
 
-		WHICH_MENU_AREA = TIME_TURN_AREA; //new RectF(OUT_PADDING, OUT_PADDING, maxX - OUT_PADDING, OUT_PADDING + NORMAL_TEXT_HEIGHT);
+		final int fieldX = game.getMaxX();
+		final int fieldY = game.getMaxY();
 
-		final int fieldX = game.getCurrentFleet().maxX;
-		final int fieldY = game.getCurrentFleet().maxY;
+		if (portraitMode) {
+			fieldSquareSize = (int) Math.floor(Math.min(
+					(maxX - MINIMUM_PADDING.value * 3 - MISSILES_IMAGES_SIZE_X.value) / fieldX, maxY * 2 / 3 / fieldY));
+			fieldInitX = (maxX - MINIMUM_PADDING.value - MISSILES_IMAGES_SIZE_X.value) / 2 - fieldX * fieldSquareSize
+					/ 2f;
+			fieldInitY = WHICH_MENU_AREA.bottom + OUT_PADDING;
 
-		fieldSquareSize = (int) Math.floor(Math.min((maxX - MINIMUM_PADDING.value * 3 - MISSILES_IMAGES_SIZE_X.value)
-				/ fieldX, maxY * 2 / 3 / fieldY));
-		fieldInitX = (maxX - MINIMUM_PADDING.value - MISSILES_IMAGES_SIZE_X.value) / 2 - fieldX * fieldSquareSize / 2f;
-		fieldInitY = WHICH_MENU_AREA.bottom + OUT_PADDING;
+			FIELD_AREA = new RectF(fieldInitX, fieldInitY, fieldInitX + fieldSquareSize * fieldX, fieldInitY
+					+ fieldSquareSize * fieldY);
 
-		FIELD_AREA = new RectF(fieldInitX, fieldInitY, fieldInitX + fieldSquareSize * fieldX, fieldInitY
-				+ fieldSquareSize * fieldY);
+			FIELD_SQUARE_AREA = new RectF(0, 0, fieldSquareSize, fieldSquareSize);
 
-		FIELD_SQUARE_AREA = new RectF(0, 0, fieldSquareSize, fieldSquareSize);
-
-		{
-			final float y = (maxY - FIELD_AREA.bottom) / 2 - NORMAL_TEXT_HEIGHT / 2 + FIELD_AREA.bottom;
-			TARGET_BUTTON = new MyButton(maxX * 2 / 3, y - OUT_PADDING - IN_PADDING, maxX - OUT_PADDING, y
-					+ NORMAL_TEXT_HEIGHT + OUT_PADDING + IN_PADDING);
-			LAUNCH_BUTTON = new MyButton(TARGET_BUTTON);
-			LAUNCH_BUTTON.offset(0, LAUNCH_BUTTON.height() / 2 + OUT_PADDING / 2);
-			TARGET_BUTTON.offset(0, -TARGET_BUTTON.height() / 2 - OUT_PADDING / 2);
-		}
-
-		MESSAGES_AREA = new RectF(OUT_PADDING, FIELD_AREA.bottom + OUT_PADDING, TARGET_BUTTON.left - OUT_PADDING, maxY
-				- OUT_PADDING);
-
-		MY_INFO_AREA = new RectF(OUT_PADDING, FIELD_AREA.bottom + OUT_PADDING, maxX - OUT_PADDING, maxY - OUT_PADDING);
-
-		{
+			final float y = maxY - OUT_PADDING - NORMAL_TEXT_HEIGHT - IN_PADDING * 2;
+			final float y2 = maxY - OUT_PADDING;
+			final float maxWidth = maxX / 2 - OUT_PADDING * 2 - IN_PADDING * 2;
 			{
+				TARGET_PAINT = new Paint(CENTER_TEXT_PAINT);
+				Draw.setPaintFitWidth(maxWidth, TARGET_PAINT, TARGET_TEXT.text, UNDO_TEXT.text);
+				final int targetWidth = Draw.getStrWidth(TARGET_PAINT, TARGET_TEXT.text);
+				final int undoWidth = Draw.getStrWidth(TARGET_PAINT, UNDO_TEXT.text);
+				final int textWidth = Math.max(targetWidth, undoWidth);
+				final int sizeX = maxX / 2;
+				final int x = sizeX / 2;
+				TARGET_BUTTON = new MyButton(x - textWidth / 2 - IN_PADDING, y, x + textWidth / 2 + IN_PADDING, y2);
+			}
+			{
+				LAUNCH_PAINT = new Paint(CENTER_TEXT_PAINT);
+				Draw.setPaintFitWidth(maxWidth, LAUNCH_PAINT, LAUNCH_TEXT.text);
+				final int launchWidth = Draw.getStrWidth(LAUNCH_PAINT, LAUNCH_TEXT.text);
+				final int sizeX = maxX / 2;
+				final int x = maxX / 2 + sizeX / 2;
+				LAUNCH_BUTTON = new MyButton(x - launchWidth / 2 - IN_PADDING, y, x + launchWidth / 2 + IN_PADDING, y2);
+			}
+
+			MESSAGES_AREA = new RectF(OUT_PADDING, FIELD_AREA.bottom + OUT_PADDING, maxX - OUT_PADDING,
+					TARGET_BUTTON.top - OUT_PADDING);
+
+			{
+				float sx = FIELD_AREA.right + MINIMUM_PADDING.value;
+				float sy = FIELD_AREA.top + MINIMUM_PADDING.value;
+				SIDE_MISSILES_AREA = new RectF(sx, sy, sx + MISSILES_IMAGES_SIZE_X.value, sy
+						+ MISSILES_IMAGES_SIZE_Y.value);
+			}
+		} else {
+			fieldSquareSize = (int) ((maxY - WHICH_MENU_AREA.bottom - OUT_PADDING * 2) / Math.max(fieldX, fieldY));
+			fieldInitX = MINIMUM_PADDING.value * 2 + MISSILES_IMAGES_SIZE_X.value;
+			fieldInitY = WHICH_MENU_AREA.bottom + OUT_PADDING;
+
+			FIELD_AREA = new RectF(fieldInitX, fieldInitY, fieldInitX + fieldSquareSize * fieldX, fieldInitY
+					+ fieldSquareSize * fieldY);
+
+			FIELD_SQUARE_AREA = new RectF(0, 0, fieldSquareSize, fieldSquareSize);
+
+			final float xLeft = FIELD_AREA.right + OUT_PADDING;
+			float y = maxY - NORMAL_TEXT_HEIGHT - OUT_PADDING * 2 - IN_PADDING * 2;
+			final float maxWidth = (maxX - xLeft - OUT_PADDING);
+			final float x = xLeft + maxWidth / 2;
+			{
+				LAUNCH_PAINT = new Paint(CENTER_TEXT_PAINT);
+				Draw.setPaintFitWidth(maxWidth, LAUNCH_PAINT, LAUNCH_TEXT.text);
+				final int launchWidth = Draw.getStrWidth(LAUNCH_PAINT, LAUNCH_TEXT.text);
+				LAUNCH_BUTTON = new MyButton(x - launchWidth / 2 - IN_PADDING, y, x + launchWidth / 2 + IN_PADDING, y
+						+ NORMAL_TEXT_HEIGHT + IN_PADDING * 2);
+			}
+			y = y - NORMAL_TEXT_HEIGHT - OUT_PADDING * 2 - IN_PADDING * 2;
+			{
+				TARGET_PAINT = new Paint(CENTER_TEXT_PAINT);
+				Draw.setPaintFitWidth(maxWidth, TARGET_PAINT, TARGET_TEXT.text, UNDO_TEXT.text);
+				final int targetWidth = Draw.getStrWidth(TARGET_PAINT, TARGET_TEXT.text);
+				final int undoWidth = Draw.getStrWidth(TARGET_PAINT, UNDO_TEXT.text);
+				final int textWidth = Math.max(targetWidth, undoWidth);
+				TARGET_BUTTON = new MyButton(x - textWidth / 2 - IN_PADDING, y, x + textWidth / 2 + IN_PADDING, y
+						+ NORMAL_TEXT_HEIGHT + IN_PADDING * 2);
+			}
+
+			MESSAGES_AREA = new RectF(FIELD_AREA.right + OUT_PADDING, WHICH_MENU_AREA.bottom + OUT_PADDING, maxX
+					- OUT_PADDING, TARGET_BUTTON.top - OUT_PADDING);
+
+			{
+				float sx = FIELD_AREA.left - MINIMUM_PADDING.value - MISSILES_IMAGES_SIZE_X.value;
+				float sy = FIELD_AREA.top + MINIMUM_PADDING.value;
+				SIDE_MISSILES_AREA = new RectF(sx, sy, sx + MISSILES_IMAGES_SIZE_X.value, sy
+						+ MISSILES_IMAGES_SIZE_Y.value);
+			}
+		}
+		for (int k = 1; k <= FIELD_NUMBERS_MAX_CHARS; k++) {
+			final String testStr = Draw.repeatString("9", k);
+			FIELD_NUMBERS_PAINT[k] = new Paint(CENTER_TEXT_PAINT);
+			final int testSize = fieldSquareSize - 2;
+			Draw.setPaintFit(testSize, testSize, FIELD_NUMBERS_PAINT[k], testStr);
+			//			FIELD_NUMBERS_PAINT[k].setTextSize(FIELD_NUMBERS_PAINT[k].getTextSize() - 1);
+			FIELD_NUMBERS_HEIGHT[k] = Draw.getStrHeight(FIELD_NUMBERS_PAINT[k], testStr);
+			FIELD_NUMBERS_LAST_PLAY_PAINT[k] = new Paint(FIELD_NUMBERS_PAINT[k]);
+			FIELD_NUMBERS_LAST_PLAY_PAINT[k].setColor(COLOR_LAST_PLAY_TEXT);
+		}
+		if (portraitMode)
+			MY_INFO_AREA = new RectF(OUT_PADDING, FIELD_AREA.bottom + OUT_PADDING, maxX - OUT_PADDING, maxY
+					- OUT_PADDING);
+		else
+			MY_INFO_AREA = new RectF(FIELD_AREA.right + OUT_PADDING, WHICH_MENU_AREA.bottom + OUT_PADDING, maxX
+					- OUT_PADDING, maxY - OUT_PADDING);
+
+		{
+			final int popupMaxX = portraitMode ? maxX : maxY;
+			//			final int popupMaxY = portraitMode ? maxY : maxY;
+			{
+				final float sizeX = popupMaxX - OUT_PADDING * 2;
 				final float sizeY = NORMAL_TEXT_HEIGHT + IN_PADDING * 3 + MISSILES_IMAGES_SIZE_Y.value;
 				final float y = maxY / 2 - sizeY / 2;
-				POPUP_SMALL_AREA = new MyButton(OUT_PADDING, y, maxX - OUT_PADDING, y + sizeY);
+				POPUP_SMALL_AREA = new MyButton(maxX / 2 - sizeX / 2, y, maxX / 2 + sizeX / 2, y + sizeY);
 
 				float mx = POPUP_SMALL_AREA.left + IN_PADDING;
 				float my = POPUP_SMALL_AREA.bottom - IN_PADDING - MISSILES_IMAGES_SIZE_Y.value;
@@ -586,9 +694,10 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 						- BUTTON_STROKE_WIDTH, POPUP_SMALL_AREA.top + BUTTON_STROKE_WIDTH);
 			}
 			{
+				final float sizeX = popupMaxX - OUT_PADDING * 2;
 				final float sizeY = NORMAL_TEXT_HEIGHT * 2 + IN_PADDING * 4 + MISSILES_IMAGES_SIZE_Y.value;
 				final float y = maxY / 2 - sizeY / 2;
-				POPUP_MEDIUM_AREA = new MyButton(OUT_PADDING, y, maxX - OUT_PADDING, y + sizeY);
+				POPUP_MEDIUM_AREA = new MyButton(maxX / 2 - sizeX / 2, y, maxX / 2 + sizeX / 2, y + sizeY);
 
 				float mx = POPUP_MEDIUM_AREA.left + IN_PADDING;
 				float my = POPUP_MEDIUM_AREA.bottom - IN_PADDING - MISSILES_IMAGES_SIZE_Y.value;
@@ -599,6 +708,17 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 				POPUP_MEDIUM_CLOSE_BUTTON = new MyButton(0, 0, closeSize, closeSize);
 				POPUP_MEDIUM_CLOSE_BUTTON.offset(POPUP_MEDIUM_AREA.right - POPUP_MEDIUM_CLOSE_BUTTON.width()
 						- BUTTON_STROKE_WIDTH, POPUP_MEDIUM_AREA.top + BUTTON_STROKE_WIDTH);
+			}
+		}
+		for (Popup popup : activePopups) {
+			if (popup.isRectSmall) {
+				popup.rect = POPUP_SMALL_AREA;
+				popup.missleRect = POPUP_SMALL_MISSILES_AREA;
+				popup.closeRect = POPUP_SMALL_CLOSE_BUTTON;
+			} else {
+				popup.rect = POPUP_MEDIUM_AREA;
+				popup.missleRect = POPUP_MEDIUM_MISSILES_AREA;
+				popup.closeRect = POPUP_MEDIUM_CLOSE_BUTTON;
 			}
 		}
 
@@ -628,12 +748,6 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		}
 
 		{
-			float x = FIELD_AREA.right + MINIMUM_PADDING.value;
-			float y = FIELD_AREA.top + MINIMUM_PADDING.value;
-			SIDE_MISSILES_AREA = new RectF(x, y, x + MISSILES_IMAGES_SIZE_X.value, y + MISSILES_IMAGES_SIZE_Y.value);
-		}
-
-		{
 			MARKS_POPUP_SIZE = Math.max(POPUP_MARKS_MIN_SIZE.value,
 					Math.min(POPUP_MARKS_MAX_SIZE.value, fieldSquareSize));
 			MARKS_SQUARE_POPUP_AREA = new RectF(0, 0, MARKS_POPUP_SIZE, MARKS_POPUP_SIZE);
@@ -644,7 +758,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		}
 		{
 			float x = OUT_PADDING;
-			float y = TIME_TURN_AREA.bottom + OUT_PADDING;
+			float y = WHICH_MENU_AREA.bottom + OUT_PADDING;
 			GAME_INFO_AREA = new RectF(x, y, maxX - OUT_PADDING, maxY - OUT_PADDING);
 		}
 
@@ -659,16 +773,16 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			}
 		}
 
+		MESSAGES_TEXT_WIDTH = Draw.getStrWidth(CENTER_TEXT_PAINT, "E99 ");
+		MESSAGES_TEXT_HEIGHT = Draw.getStrHeight(CENTER_TEXT_PAINT, "E99 ");
 		{
 			int mY = fieldSquareSize / fleetMAXY;
-			int mX = (int) ((MESSAGES_AREA.width() - MESSAGES_TEXT_WIDTH) / ((4 + 3 * MESSAGES_PLUS_X.value) * fleetMAXX));
+			final float maxSquaresX = 2 * MESSAGES_PLUS_X + 3 * fleetMAXX;
+			int mX = (int) ((MESSAGES_AREA.width() / 2 - MESSAGES_TEXT_WIDTH) / maxSquaresX);
 			fleetSS = Math.min(mX, mY);
 			fleetSS = Math.min(fleetSS, fieldSquareSize);
 			fleetSS = Math.max(fleetSS, (int) MIN_SQUARE_SIZE_MESSAGES.value);
 		}
-
-		MESSAGES_TEXT_WIDTH = Draw.getStrWidth(CENTER_TEXT_PAINT, "E99 ");
-		MESSAGES_TEXT_HEIGHT = Draw.getStrHeight(CENTER_TEXT_PAINT, "E99 ");
 		MESSAGES_PLUS_Y = Math.max(MESSAGES_TEXT_HEIGHT, fleetMAXY * fleetSS) + .5f * fleetSS;
 
 		{
@@ -680,17 +794,26 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			TOP_MESSAGE_BUTTON.offset(MESSAGES_AREA.right - OUT_PADDING - TOP_MESSAGE_BUTTON.width(), FIELD_AREA.bottom
 					+ OUT_PADDING);
 		}
+
+		if (showMarksPopup) {
+			showMarksPopup = false;
+		}
 	}
 
 	@Override
 	public synchronized void draw(Canvas canvas) {
 		final GameMode gameMode = game.getCurrentGameMode();
 		{
-			String timeStr = getTimeStr(gameMode, GUIplayer);
-			canvas.drawText(timeStr, TIME_TURN_AREA.left, TIME_TURN_AREA.centerY() + NORMAL_TEXT_HEIGHT / 2,
-					LEFT_TEXT_PAINT);
-
+			{
+				String timeStr = getTimeStr(gameMode, GUIplayer);
+				final float x = portraitMode ? TIME_AREA.left : TIME_AREA.centerX();
+				final Paint paint = portraitMode ? LEFT_TEXT_PAINT : CENTER_TEXT_PAINT;
+				canvas.drawText(timeStr, x, TIME_AREA.centerY() + NORMAL_TEXT_HEIGHT / 2, paint);
+			}
 			Turn_Text_Label: {
+				final float x = portraitMode ? TURN_AREA.right : TURN_AREA.centerX();
+				final Paint paint = portraitMode ? RIGHT_TEXT_SMALL_PAINT : CENTER_TEXT_SMALL_PAINT;
+
 				String turnStr;
 				if (currentState == GameState.FinishedGame) {
 					if (yourTurn)
@@ -709,17 +832,14 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 						if (gameMode.getTimeLimitType() != TimeLimitType.NoTimeLimit) {
 							String enemyTimeStr = getTimeStr(gameMode, GUIplayer.getEnemy());
 
-							canvas.drawText(turnStr, TIME_TURN_AREA.right, TIME_TURN_AREA.top + SMALL_TEXT_HEIGHT,
-									RIGHT_TEXT_SMALL_PAINT);
-							canvas.drawText(enemyTimeStr, TIME_TURN_AREA.right, TIME_TURN_AREA.bottom,
-									RIGHT_TEXT_SMALL_PAINT);
+							canvas.drawText(turnStr, x, TURN_AREA.top + SMALL_TEXT_HEIGHT, paint);
+							canvas.drawText(enemyTimeStr, x, TURN_AREA.bottom, paint);
 
 							break Turn_Text_Label;
 						}
 					}
 				}
-				canvas.drawText(turnStr, TIME_TURN_AREA.right, TIME_TURN_AREA.centerY() + SMALL_TEXT_HEIGHT / 2,
-						RIGHT_TEXT_SMALL_PAINT);
+				canvas.drawText(turnStr, x, TURN_AREA.centerY() + SMALL_TEXT_HEIGHT / 2, paint);
 			}
 
 			canvas.drawText(menu.text, WHICH_MENU_AREA.centerX(), WHICH_MENU_AREA.bottom, WHICH_MENU_PAINT);
@@ -737,13 +857,17 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		if (menu == Menu.GameInfo) {
 			ScreenUtils.drawGameInfo(canvas, game, gameMode, GAME_INFO_AREA, LEFT_TEXT_PAINT, CENTER_TEXT_PAINT, true);
 		} else {
-			final int fieldX = game.getCurrentFleet().maxX;
-			final int fieldY = game.getCurrentFleet().maxY;
+			final int fieldX = game.getMaxX();
+			final int fieldY = game.getMaxY();
 
-			drawField(canvas, fieldSquareSize, fieldX, fieldY);
+			drawField(canvas, fieldX, fieldY);
 		}
 
 		drawPopups(canvas);
+
+		{
+			canvas.drawText(Coordinate2.COORDINATE_COUNTER + "", maxX - 10, maxY - 10, RIGHT_TEXT_SMALL_PAINT);
+		}
 	}
 
 	private String getTimeStr(final GameMode gameMode, Player player) {
@@ -814,7 +938,8 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		}
 	}
 
-	private void drawField(Canvas canvas, int ss, int fieldX, int fieldY) {
+	private void drawField(Canvas canvas, int fieldX, int fieldY) {
+		int ss = fieldSquareSize;
 		final Player player = game.getPlayer1();
 		final Player enemy = player.getEnemy();
 
@@ -826,8 +951,8 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			enemy.getMessagesUnlock();
 
 			if (lastMessage != null) {
-				final List<Coordinate> counters = lastMessage.getCounter();
-				for (Coordinate coor : counters) {
+				final List<Coordinate2> counters = lastMessage.getCounter();
+				for (Coordinate2 coor : counters) {
 					final float x1 = fieldInitX + coor.x * ss;
 					final float y1 = fieldInitY + coor.y * ss;
 					canvas.translate(x1, y1);
@@ -852,9 +977,12 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 						lastPlay = messageAt == lastMessage;
 
 						final String turnId = messageAt.getTurnId();
+						final int index = turnId.length();
 						final float fx = x1 + .5f * ss;
-						final float fy = y2 - OUT_PADDING;
-						canvas.drawText(turnId, fx, fy, lastPlay ? LAST_PLAY_TEXT_CENTER_PAINT : CENTER_TEXT_PAINT);
+						final float fy = y1 + ss / 2 + FIELD_NUMBERS_HEIGHT[index] / 2;
+						final Paint paint = lastPlay ? FIELD_NUMBERS_LAST_PLAY_PAINT[index]
+								: FIELD_NUMBERS_PAINT[index];
+						canvas.drawText(turnId, fx, fy, paint);
 
 						if (lastPlay) {
 							canvas.drawRect(x1, y1, x2, y2, LAST_PLAY_PAINT);
@@ -873,8 +1001,8 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			final Message lastMessage = messages.isEmpty() ? null : messages.get(0);
 
 			if (lastMessage != null) {
-				final List<Coordinate> counters = lastMessage.getCounter();
-				for (Coordinate coor : counters) {
+				final List<Coordinate2> counters = lastMessage.getCounter();
+				for (Coordinate2 coor : counters) {
 					final float x1 = fieldInitX + coor.x * ss;
 					final float y1 = fieldInitY + coor.y * ss;
 					canvas.translate(x1, y1);
@@ -905,9 +1033,12 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 						final boolean lastPlay = messageAt == lastMessage;
 
 						final String turnId = messageAt.getTurnId();
+						final int index = turnId.length();
 						final float fx = x1 + .5f * ss;
-						final float fy = y2 - OUT_PADDING;
-						canvas.drawText(turnId, fx, fy, lastPlay ? LAST_PLAY_TEXT_CENTER_PAINT : CENTER_TEXT_PAINT);
+						final float fy = y1 + ss / 2 + FIELD_NUMBERS_HEIGHT[index] / 2;
+						final Paint paint = lastPlay ? FIELD_NUMBERS_LAST_PLAY_PAINT[index]
+								: FIELD_NUMBERS_PAINT[index];
+						canvas.drawText(turnId, fx, fy, paint);
 
 						if (lastPlay) {
 							canvas.drawRect(x1, y1, x2, y2, LAST_PLAY_PAINT);
@@ -926,7 +1057,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 						if (shot.getCoordinate().equals(player.getPosition()))
 							shotAtPosition = true;
 
-						for (final Coordinate coor : shot.getValidShots()) {
+						for (final Coordinate2 coor : shot.getValidShots()) {
 							final float x1 = fieldInitX + coor.x * ss;
 							final float y1 = fieldInitY + coor.y * ss;
 							final float x2 = x1 + ss;
@@ -960,15 +1091,17 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 				canvas.clipRect(MESSAGES_AREA);
 
 				float msgX = MESSAGES_AREA.left;
+				float msgX2 = msgX + MESSAGES_AREA.width() / 2;
 				float msgY = MESSAGES_AREA.top + MESSAGES_PLUS_Y / 2 - messagesYOffset;
+				int collumn = 0;
 				for (Message message : messages) {
-
 					final boolean lastPlay = lastMessage == message;
-
-					canvas.drawText(message.getTurnId() + "    ", msgX, msgY + MESSAGES_TEXT_HEIGHT / 2,
+					final float msgXX = (collumn % 2) == 0 ? msgX : msgX2;
+					collumn++;
+					canvas.drawText(message.getTurnId() + "    ", msgXX, msgY + MESSAGES_TEXT_HEIGHT / 2,
 							lastPlay ? LAST_PLAY_TEXT_LEFT_PAINT : LEFT_TEXT_PAINT);
 
-					float msgUnitX = msgX + MESSAGES_TEXT_WIDTH;
+					float msgUnitX = msgXX + MESSAGES_TEXT_WIDTH;
 					float msgUnitY = msgY;
 					for (MessageUnit messageUnit : message.getParts()) {
 						int sx;
@@ -985,7 +1118,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 							int sy = ShipClass.sizeY(messageUnit.shipId, 0);
 							float x1 = msgUnitX;
 							float y1 = msgUnitY - (sy * fleetSS) / 2;
-							final List<Coordinate> listPieces = ShipClass.getShipParts(messageUnit.shipId, 0);
+							final List<Coordinate2> listPieces = ShipClass.getShipParts(messageUnit.shipId, 0);
 							drawShip(canvas, msgUnitX, y1, fleetSS, listPieces, SHIP_PAINT);
 
 							if (messageUnit.type == TypesMessageUnits.AKillerShot) {
@@ -995,27 +1128,27 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 								canvas.drawLine(x2, y1, x1, y2, DESTROYED_SHIP_PAINT);
 							}
 						}
-						msgUnitX += (sx + MESSAGES_PLUS_X.value) * fleetSS;
+						msgUnitX += (sx + MESSAGES_PLUS_X) * fleetSS;
 					}
 
-					msgY += MESSAGES_PLUS_Y;
+					msgY += (collumn % 2) == 0 ? MESSAGES_PLUS_Y : 0;
 				}
 				canvas.restore();
-				if (messagesYOffset > 0) {
-					Bitmap image = newMessage ? ARROW_TOP_RED_IMAGE : ARROW_TOP_IMAGE;
-					canvas.drawBitmap(image, TOP_MESSAGE_BUTTON.left, TOP_MESSAGE_BUTTON.top, IMAGE_PAINT);
-					canvas.drawRect(TOP_MESSAGE_BUTTON, BLACK_PEN);
-				}
+				//				if (messagesYOffset > 0) {
+				//					Bitmap image = newMessage ? ARROW_TOP_RED_IMAGE : ARROW_TOP_IMAGE;
+				//					canvas.drawBitmap(image, TOP_MESSAGE_BUTTON.left, TOP_MESSAGE_BUTTON.top, IMAGE_PAINT);
+				//					canvas.drawRect(TOP_MESSAGE_BUTTON, BLACK_PEN);
+				//				}
 
 				// Draw Target & Launch buttons
 				if (shotAtPosition) {
-					drawButton(canvas, UNDO_TEXT.text, TARGET_BUTTON, CENTER_TEXT_PAINT);
+					drawButton(canvas, UNDO_TEXT.text, TARGET_BUTTON, TARGET_PAINT);
 				} else if (!player.allShotsPlaced()) {
-					drawButton(canvas, TARGET_TEXT.text, TARGET_BUTTON, CENTER_TEXT_PAINT);
+					drawButton(canvas, TARGET_TEXT.text, TARGET_BUTTON, TARGET_PAINT);
 				}
 				if (player.allShotsPlaced() && yourTurn && currentState == GameState.Playing
 						&& turnState == TurnState.ChooseTargets) {
-					drawButton(canvas, LAUNCH_TEXT.text, LAUNCH_BUTTON, CENTER_TEXT_PAINT);
+					drawButton(canvas, LAUNCH_TEXT.text, LAUNCH_BUTTON, LAUNCH_PAINT);
 				}
 			}
 			player.getMessagesUnlock();
@@ -1024,8 +1157,8 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			final Message lastMessage = messages.isEmpty() ? null : messages.get(0);
 
 			if (lastMessage != null) {
-				final List<Coordinate> counters = lastMessage.getCounter();
-				for (Coordinate coor : counters) {
+				final List<Coordinate2> counters = lastMessage.getCounter();
+				for (Coordinate2 coor : counters) {
 					final float x1 = fieldInitX + coor.x * ss;
 					final float y1 = fieldInitY + coor.y * ss;
 					canvas.translate(x1, y1);
@@ -1055,9 +1188,12 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 						final boolean lastPlay = messageAt == lastMessage;
 
 						final String turnId = messageAt.getTurnId();
+						final int index = turnId.length();
 						final float fx = x1 + .5f * ss;
-						final float fy = y2 - OUT_PADDING;
-						canvas.drawText(turnId, fx, fy, lastPlay ? LAST_PLAY_TEXT_CENTER_PAINT : CENTER_TEXT_PAINT);
+						final float fy = y1 + ss / 2 + FIELD_NUMBERS_HEIGHT[index] / 2;
+						final Paint paint = lastPlay ? FIELD_NUMBERS_LAST_PLAY_PAINT[index]
+								: FIELD_NUMBERS_PAINT[index];
+						canvas.drawText(turnId, fx, fy, paint);
 
 						if (lastPlay) {
 							canvas.drawRect(x1, y1, x2, y2, LAST_PLAY_PAINT);
@@ -1072,7 +1208,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 					Shot shot = turnTargets.get(i);
 					final boolean isPlaced = shot.isPlaced();
 					if (isPlaced) {
-						for (final Coordinate coor : shot.getValidShots()) {
+						for (final Coordinate2 coor : shot.getValidShots()) {
 							final float x1 = fieldInitX + coor.x * ss;
 							final float y1 = fieldInitY + coor.y * ss;
 							final float x2 = x1 + ss;
@@ -1097,19 +1233,17 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 				canvas.clipRect(MESSAGES_AREA);
 
 				float msgX = MESSAGES_AREA.left;
-				float msgY = MESSAGES_AREA.top + MESSAGES_PLUS_Y / 2;
+				float msgX2 = msgX + MESSAGES_AREA.width() / 2;
+				float msgY = MESSAGES_AREA.top + MESSAGES_PLUS_Y / 2 - messagesYOffset;
+				int collumn = 0;
 				for (Message message : messages) {
-					//					if (msgY < MESSAGES_AREA.top - MESSAGES_PLUS_Y)
-					//						continue;
-					//					if (msgY > MESSAGES_AREA.bottom + MESSAGES_PLUS_Y)
-					//						break;
-
 					final boolean lastPlay = lastMessage == message;
-
-					canvas.drawText(message.getTurnId() + "    ", msgX, msgY + MESSAGES_TEXT_HEIGHT / 2,
+					final float msgXX = (collumn % 2) == 0 ? msgX : msgX2;
+					collumn++;
+					canvas.drawText(message.getTurnId() + "    ", msgXX, msgY + MESSAGES_TEXT_HEIGHT / 2,
 							lastPlay ? LAST_PLAY_TEXT_LEFT_PAINT : LEFT_TEXT_PAINT);
 
-					float msgUnitX = msgX + MESSAGES_TEXT_WIDTH;
+					float msgUnitX = msgXX + MESSAGES_TEXT_WIDTH;
 					float msgUnitY = msgY;
 					for (MessageUnit messageUnit : message.getParts()) {
 						int sx;
@@ -1126,7 +1260,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 							int sy = ShipClass.sizeY(messageUnit.shipId, 0);
 							float x1 = msgUnitX;
 							float y1 = msgUnitY - (sy * fleetSS) / 2;
-							final List<Coordinate> listPieces = ShipClass.getShipParts(messageUnit.shipId, 0);
+							final List<Coordinate2> listPieces = ShipClass.getShipParts(messageUnit.shipId, 0);
 							drawShip(canvas, msgUnitX, y1, fleetSS, listPieces, SHIP_PAINT);
 
 							if (messageUnit.type == TypesMessageUnits.AKillerShot) {
@@ -1136,14 +1270,16 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 								canvas.drawLine(x2, y1, x1, y2, DESTROYED_SHIP_PAINT);
 							}
 						}
-						msgUnitX += (sx + MESSAGES_PLUS_X.value) * fleetSS;
+						msgUnitX += (sx + MESSAGES_PLUS_X) * fleetSS;
 					}
 
-					msgY += MESSAGES_PLUS_Y;
+					msgY += (collumn % 2) == 0 ? MESSAGES_PLUS_Y : 0;
 				}
 				canvas.restore();
 			}
 			enemy.getMessagesUnlock();
+
+			canvas.drawRect(TARGET_BUTTON, FIELD_PEN);
 		}
 
 		for (int i = 0; i <= fieldX; i++)
@@ -1158,25 +1294,34 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 
 				canvas.translate(MARKS_POPUP_BUTTONS.left, MARKS_POPUP_BUTTONS.top);
 
+				int k = 0;
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, SHIP_PAINT);
+				if (!canSelect[k++])
+					canvas.drawRect(MARKS_SQUARE_POPUP_AREA, CANT_SELECT_PAINT);
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, paint);
 
 				canvas.translate(0, MARKS_POPUP_SIZE);
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, WATER_PAINT);
+				if (!canSelect[k++])
+					canvas.drawRect(MARKS_SQUARE_POPUP_AREA, CANT_SELECT_PAINT);
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, paint);
 
 				canvas.translate(0, MARKS_POPUP_SIZE);
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, BACKGROUND_PAINT);
+				if (!canSelect[k++])
+					canvas.drawRect(MARKS_SQUARE_POPUP_AREA, CANT_SELECT_PAINT);
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, paint);
 
 				canvas.translate(0, MARKS_POPUP_SIZE);
 				drawMiniField(canvas, 0f, 0f, MINI_MARKS_POPUP_SIZE, MINI_MARKS_FILL);
-				//canvas.drawRect(MARKS_POPUP_AREA, WATER_PAINT);
+				if (!canSelect[k++])
+					canvas.drawRect(MARKS_SQUARE_POPUP_AREA, CANT_SELECT_PAINT);
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, paint);
 
 				canvas.translate(0, MARKS_POPUP_SIZE);
 				drawMiniField(canvas, 0f, 0f, MINI_MARKS_POPUP_SIZE, MINI_MARKS_CLEAR);
-				//canvas.drawRect(MARKS_POPUP_AREA, BACKGROUND_PAINT);
+				if (!canSelect[k++])
+					canvas.drawRect(MARKS_SQUARE_POPUP_AREA, CANT_SELECT_PAINT);
 				canvas.drawRect(MARKS_SQUARE_POPUP_AREA, paint);
 
 				canvas.translate(0, -MARKS_POPUP_SIZE * 4);
@@ -1246,9 +1391,9 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			return MINI_MISSILE_IMAGE; //TODO: camera shot images
 	}
 
-	private void drawShip(Canvas canvas, float initX, float initY, float ss, List<Coordinate> listPieces,
+	private void drawShip(Canvas canvas, float initX, float initY, float ss, List<Coordinate2> listPieces,
 			Paint shipPaint) {
-		for (Coordinate coor : listPieces) {
+		for (Coordinate2 coor : listPieces) {
 			final float x1 = initX + coor.x * ss;
 			final float y1 = initY + coor.y * ss;
 			final float x2 = initX + (coor.x + 1) * ss;
@@ -1329,8 +1474,8 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 							buttonDownAndUp(action, x, y, TARGET_BUTTON);
 							buttonDownAndUp(action, x, y, LAUNCH_BUTTON);
 						}
-						if (messagesYOffset > 0)
-							buttonDownAndUp(action, x, y, TOP_MESSAGE_BUTTON);
+						//						if (messagesYOffset > 0)
+						//							buttonDownAndUp(action, x, y, TOP_MESSAGE_BUTTON);
 						if (game.isInsideField(gameX, gameY))
 							player.movePositionAbsolute(gameX, gameY);
 						if (!TARGET_BUTTON.isButtonDown() && !LAUNCH_BUTTON.isButtonDown()
@@ -1362,11 +1507,13 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 						}
 					}
 				}
+			}
+			if (menu == Menu.Enemy || menu == Menu.DEBUG_EnemyMarks) {
 				if (touchDownMessages) {
 					final List<Message> messages = player.getMessagesLock();
-					float totalMessagesSizeY = MESSAGES_PLUS_Y * messages.size();
-					float max = totalMessagesSizeY - MESSAGES_AREA.height();
+					float totalMessagesSizeY = MESSAGES_PLUS_Y * (int) (Math.ceil(messages.size() / 2.0));
 					player.getMessagesUnlock();
+					float max = totalMessagesSizeY - MESSAGES_AREA.height();
 
 					float diffY = lastY - y;
 					float messagesYOffsetBefore = messagesYOffset;
@@ -1412,25 +1559,27 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			if (menu == Menu.Enemy) {
 				if (showMarksPopup && buttonDownAndUp(action, x, y, MARKS_POPUP_BUTTONS)) {
 					final int n = (int) Math.floor(((y - MARKS_POPUP_BUTTONS.top) / MARKS_POPUP_SIZE));
-					if (n == 0) {
-						if (player.markAt() != Mark.Water100 && player.markAt() != Mark.Ship100)
-							player.setMarkAt(Mark.Ship);
-					} else if (n == 1) {
-						if (player.markAt() != Mark.Water100 && player.markAt() != Mark.Ship100)
-							player.setMarkAt(Mark.Water);
-					} else if (n == 2) {
-						if (player.markAt() != Mark.Water100 && player.markAt() != Mark.Ship100)
-							player.setMarkAt(Mark.None);
-					} else if (n == 3)
-						player.fillWater();
-					else if (n == 4)
-						player.clearWater();
-					showMarksPopup = false;
+					if (canSelect[n]) {
+						if (n == 0) {
+							if (!player.markAt().permanent())
+								player.setMarkAt(Mark.Ship);
+						} else if (n == 1) {
+							if (!player.markAt().permanent())
+								player.setMarkAt(Mark.Water);
+						} else if (n == 2) {
+							if (!player.markAt().permanent())
+								player.setMarkAt(Mark.None);
+						} else if (n == 3)
+							player.fillWater();
+						else if (n == 4)
+							player.clearWater();
+						showMarksPopup = false;
+					}
 				}
-				if (messagesYOffset > 0 && buttonDownAndUp(action, x, y, TOP_MESSAGE_BUTTON)) {
-					messagesYOffset = 0;
-					newMessage = false;
-				}
+				//				if (messagesYOffset > 0 && buttonDownAndUp(action, x, y, TOP_MESSAGE_BUTTON)) {
+				//					messagesYOffset = 0;
+				//					newMessage = false;
+				//				}
 			}
 
 			if (!activePopups.isEmpty()) {
@@ -1525,6 +1674,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			}
 		}
 
+		/*
 		final List<Message> messages = GUIplayer.getMessagesLock();
 		final int size = messages.size();
 		GUIplayer.getMessagesUnlock();
@@ -1532,15 +1682,16 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			lastMessagesSize = size;
 			newMessage = true;
 		}
+		*/
 	}
 
 	private void showMarksPopup(int popupGameX, int popupGameY) {
-		final int fieldX = game.getCurrentFleet().maxX;
-
+		final int fieldX = game.getMaxX();
+		final int fieldY = game.getMaxY();
 		final float x = convertGameToScreen(fieldInitX, fieldSquareSize, popupGameX);
 		final float y = convertGameToScreen(fieldInitY, fieldSquareSize, popupGameY);
 		float marksPopupX, marksPopupY;
-		if ((x + fieldSquareSize * 1.5f + MARKS_POPUP_SIZE) > fieldInitX + fieldSquareSize * fieldX) {
+		if (popupGameX > fieldX / 2) {//(x + fieldSquareSize * 1.5f + MARKS_POPUP_SIZE) > fieldInitX + fieldSquareSize * fieldX) {
 			marksPopupX = x - fieldSquareSize * .5f - MARKS_POPUP_SIZE;
 			marksPopupLineX = x;
 			marksPopupLineX2 = marksPopupX + MARKS_POPUP_SIZE;
@@ -1551,14 +1702,25 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		}
 		marksPopupLineY = y;
 
-		marksPopupY = Math.max(0,
-				Math.min(maxY - MARKS_POPUP_SIZE * 5, (y + fieldSquareSize * .5f) - MARKS_POPUP_SIZE * 2.5f));
+		marksPopupY = Math.max(
+				FIELD_AREA.top,
+				Math.min(FIELD_AREA.bottom - MARKS_POPUP_SIZE * 5, (y + fieldSquareSize * .5f) - MARKS_POPUP_SIZE
+						* 2.5f));
 		marksPopupLineY2 = marksPopupY;
 
 		MARKS_POPUP_BUTTONS.offsetTo(marksPopupX, marksPopupY);
 
 		marksPopupTargetX = lastGX;
 		marksPopupTargetY = lastGY;
+
+		{
+			final Mark markAt = GUIplayer.markAt(popupGameX, popupGameY);
+			canSelect[0] = markAt == Mark.Water || markAt == Mark.None;
+			canSelect[1] = markAt == Mark.Ship || markAt == Mark.None;
+			canSelect[2] = true; //markAt == Mark.Ship || markAt == Mark.Water;
+			canSelect[3] = markAt.isShip();
+			canSelect[4] = markAt.isShip();
+		}
 
 		showMarksPopup = true;
 	}
@@ -1579,6 +1741,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			popup.text.add(winnerStr);
 			popup.remainingTime = POPUP_TIME_FINISHED_GAME;
 			popup.showMissiles = false;
+			popup.isRectSmall = false;
 			popup.rect = POPUP_MEDIUM_AREA;
 			popup.closeRect = POPUP_MEDIUM_CLOSE_BUTTON;
 			popup.type = PopupType.Finish;
@@ -1596,7 +1759,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		} else {
 			popup.text.add(ENEMY_EXTRA_TURN_TEXT.text);
 		}
-		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.2 : 1) * POPUP_TIME_EXTRA_TURN;
+		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.05 : 1) * POPUP_TIME_EXTRA_TURN;
 
 		popup.showMissiles = false;
 		for (GameBonus bonus : bonusPlay) {
@@ -1608,6 +1771,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 				popup.missleRect = POPUP_MEDIUM_MISSILES_AREA;
 			}
 		}
+		popup.isRectSmall = false;
 		popup.rect = POPUP_MEDIUM_AREA;
 		popup.closeRect = POPUP_MEDIUM_CLOSE_BUTTON;
 		popup.type = PopupType.Normal;
@@ -1628,7 +1792,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			popup.text.add(ENEMY_TURN_TEXT.text);
 			yourTurn = false;
 		}
-		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.2 : 1) * POPUP_TIME_YOUR_TURN;
+		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.05 : 1) * POPUP_TIME_YOUR_TURN;
 		popup.showMissiles = true;
 		popup.missilesList.clear();
 		final List<Shot> turnTargets = newTurnPlayer.getTurnTargets();
@@ -1636,6 +1800,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			popup.missilesList.add(shot.getKindShot());
 		}
 		newTurnPlayer.unlockTurnTargets();
+		popup.isRectSmall = true;
 		popup.rect = POPUP_SMALL_AREA;
 		popup.missleRect = POPUP_SMALL_MISSILES_AREA;
 		popup.closeRect = POPUP_SMALL_CLOSE_BUTTON;
@@ -1656,25 +1821,25 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			final List<Ship> playerShips = player.getShips();
 			sAnimationList.clear();
 			for (Shot shot : turnTargets) {
-				final Coordinate shotCoordinate = shot.getCoordinate();
+				final Coordinate2 shotCoordinate = shot.getCoordinate();
 
 				final double x0, x1, y0, y1;
 				if (yourTurn) {
-					final int randomIndex1 = GameClass.random.nextInt(playerShips.size());
-					final List<Coordinate> listPieces = playerShips.get(randomIndex1).getListPieces();
-					final int randomIndex2 = GameClass.random.nextInt(listPieces.size());
-					final Coordinate randomShipCoordinate = listPieces.get(randomIndex2);
+					final int randomIndex1 = GameClass.randomThings.nextInt(playerShips.size());
+					final List<Coordinate2> listPieces = playerShips.get(randomIndex1).getListPieces();
+					final int randomIndex2 = GameClass.randomThings.nextInt(listPieces.size());
+					final Coordinate2 randomShipCoordinate = listPieces.get(randomIndex2);
 
 					x0 = convertGameToScreen(fieldInitX, fieldSquareSize, randomShipCoordinate.x + .5f);
 					y0 = convertGameToScreen(fieldInitY, fieldSquareSize, randomShipCoordinate.y + .5f);
 					x1 = convertGameToScreen(fieldInitX, fieldSquareSize, shotCoordinate.x + .5f);
 					y1 = convertGameToScreen(fieldInitY, fieldSquareSize, shotCoordinate.y + .5f);
 				} else {
-					final int fieldX = game.getCurrentFleet().maxX;
-					final int fieldY = game.getCurrentFleet().maxY;
+					final int fieldX = game.getMaxX();
+					final int fieldY = game.getMaxY();
 
-					final int rx = GameClass.random.nextInt(fieldX);
-					final int ry = GameClass.random.nextInt(fieldY);
+					final int rx = GameClass.randomThings.nextInt(fieldX);
+					final int ry = GameClass.randomThings.nextInt(fieldY);
 
 					x0 = convertGameToScreen(fieldInitX, fieldSquareSize, rx + .5f);
 					y0 = convertGameToScreen(fieldInitY, fieldSquareSize, ry + .5f);
@@ -1709,7 +1874,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 	private void addPopupWait() {
 		Popup popup = getFreePopup();
 		popup.type = PopupType.Wait;
-		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.2 : 1) * WAITING_POPUP_TIME;
+		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.01 : 1) * WAITING_POPUP_TIME;
 		activePopups.add(popup);
 	}
 
@@ -1726,6 +1891,7 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 			popup.text.add(EXIT_GAME_QUESTION_TEXT.text);
 			popup.remainingTime = POPUP_TIME_FINISHED_GAME;
 			popup.showMissiles = false;
+			popup.isRectSmall = false;
 			popup.rect = POPUP_MEDIUM_AREA;
 			popup.closeRect = POPUP_MEDIUM_CLOSE_BUTTON;
 			popup.type = PopupType.Back;
@@ -1739,8 +1905,9 @@ public class PlayingScreen extends UserInterfaceClass implements PlayInterface {
 		Popup popup = getFreePopup();
 		popup.text.clear();
 		popup.text.add(messageStr);
-		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.2 : 1) * POPUP_TIME_EXTERNAL_MESSAGE;
+		popup.remainingTime = (ComputerAI.DEBUG_AI ? 0.05 : 1) * POPUP_TIME_EXTERNAL_MESSAGE;
 		popup.showMissiles = false;
+		popup.isRectSmall = true;
 		popup.rect = POPUP_SMALL_AREA;
 		popup.closeRect = POPUP_SMALL_CLOSE_BUTTON;
 		popup.type = PopupType.Normal;

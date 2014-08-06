@@ -6,10 +6,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.Game.Mark;
-import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.objects.Message;
 import pt.rmartins.battleships.objects.Ship;
 import pt.rmartins.battleships.objects.ShipClass;
@@ -44,7 +43,7 @@ public class ShipComputer extends ShipClass {
 
 	private SearchStatus searchStatus;
 
-	private List<Coordinate> knownSpots;
+	private List<Coordinate2> knownSpots;
 	private List<MyPair<MessageAI, Boolean>> possibleSpots;
 	private final List<Ship> allPlaces, unmodifiableAllPlaces;
 	private boolean isDestroyed;
@@ -54,7 +53,7 @@ public class ShipComputer extends ShipClass {
 	private final int maxY;
 
 	public ShipComputer(int id, ComputerAI comp) {
-		super(id, 0, new Coordinate(0, 0));
+		super(id, 0, new Coordinate2(0, 0));
 
 		final Game game = comp.getGame();
 		maxX = game.getMaxX();
@@ -69,7 +68,7 @@ public class ShipComputer extends ShipClass {
 	private void initialize(SearchStatus searchStatus, ComputerAI comp) {
 		this.comp = comp;
 		this.searchStatus = searchStatus;
-		this.knownSpots = new ArrayList<Coordinate>();
+		this.knownSpots = new ArrayList<Coordinate2>();
 		this.possibleSpots = new ArrayList<MyPair<MessageAI, Boolean>>();
 		this.isDestroyed = false;
 	}
@@ -110,7 +109,7 @@ public class ShipComputer extends ShipClass {
 		}
 	}
 
-	public boolean addKnownSpot(Coordinate coor) {
+	public boolean addKnownSpot(Coordinate2 coor) {
 		if (isAValidKnownSpot(coor)) {
 			knownSpots.add(coor);
 			update();
@@ -154,7 +153,7 @@ public class ShipComputer extends ShipClass {
 		}
 	}
 
-	public boolean isAValidKnownSpot(Coordinate coor) {
+	public boolean isAValidKnownSpot(Coordinate2 coor) {
 		if (knownSpots.contains(coor))
 			return false;
 
@@ -199,7 +198,7 @@ public class ShipComputer extends ShipClass {
 			return true;
 
 		for (int i = index; i < ship.getNumberPieces(); i++) {
-			final Coordinate coor = ship.getListPieces().get(i);
+			final Coordinate2 coor = ship.getListPieces().get(i);
 			if (m.getCoors().contains(coor)) {
 				return multipleMessageHits(m, ship, hits - 1, i + 1);
 			}
@@ -214,12 +213,12 @@ public class ShipComputer extends ShipClass {
 		for (Iterator<Ship> iterator = allPlaces.iterator(); iterator.hasNext();) {
 			final Ship ship = iterator.next();
 			possible_label: {
-				for (final Coordinate coor : knownSpots) {
+				for (final Coordinate2 coor : knownSpots) {
 					if (!ship.pieceAt(coor)) {
 						break possible_label;
 					}
 				}
-				for (final Coordinate coor : ship) {
+				for (final Coordinate2 coor : ship) {
 					if (comp.markAt(coor).isWater())
 						break possible_label;
 
@@ -240,7 +239,7 @@ public class ShipComputer extends ShipClass {
 			for (Iterator<Ship> iterator = allPlaces.iterator(); iterator.hasNext();) {
 				final Ship ship = iterator.next();
 				possible_label: {
-					for (final Coordinate coor : ship) {
+					for (final Coordinate2 coor : ship) {
 						if (comp.markAt(coor).isWater())
 							break possible_label;
 					}
@@ -261,14 +260,14 @@ public class ShipComputer extends ShipClass {
 		for (Iterator<Ship> iterator = allPlaces.iterator(); iterator.hasNext();) {
 			final Ship ship = iterator.next();
 			possible_label: {
-				if (!Coordinate.intersectAny(ship, message.getCoors())) {
+				if (!Coordinate2.intersectAny(ship, message.getCoors())) {
 					for (int i = 0; i < 1; i++) {
 					}
 
 					break possible_label;
 				}
 
-				for (final Coordinate coor : ship) {
+				for (final Coordinate2 coor : ship) {
 
 					if (comp.markAt(coor).isWater())
 						break possible_label;
@@ -285,7 +284,7 @@ public class ShipComputer extends ShipClass {
 				/**
 				 * Intersection between known spots
 				 */
-				for (final Coordinate coordinate : knownSpots) {
+				for (final Coordinate2 coordinate : knownSpots) {
 					if (!ship.pieceAt(coordinate)) {
 						break possible_label;
 					}
@@ -297,15 +296,15 @@ public class ShipComputer extends ShipClass {
 				 * TODO: VERIFY THIS !!!!!!!!!!!!!!!!!!!!!! <br>
 				 * FIXME
 				 */
-				for (Coordinate messageCoor : message.getCoors()) {
-					final List<Coordinate> listIntercept = Coordinate.intersect(ship, message.getCoors(), messageCoor);
-					if (listIntercept.size() > hits) {
-						for (int i = 0; i < 1; i++) {
-						}
-
-						break possible_label;
-					}
-				}
+				//				for (Coordinate2 messageCoor : message.getCoors()) {
+				//					final List<Coordinate2> listIntercept = Coordinate2.intersect(ship, message.getCoors(), messageCoor);
+				//					if (listIntercept.size() > hits) {
+				//						for (int i = 0; i < 1; i++) {
+				//						}
+				//
+				//						break possible_label;
+				//					}
+				//				}
 
 				continue;
 			}
@@ -320,7 +319,7 @@ public class ShipComputer extends ShipClass {
 				misses = message.getMisses();
 
 				final List<Ship> listPossibilities = new ArrayList<Ship>();
-				for (final Coordinate coor : message.getCoors()) {
+				for (final Coordinate2 coor : message.getCoors()) {
 					listPossibilities.addAll(ShipClass.getAllPossibilities(id, coor));
 				}
 
@@ -342,7 +341,7 @@ public class ShipComputer extends ShipClass {
 	}
 
 	private void markShip() {
-		for (final Coordinate coor : this) {
+		for (final Coordinate2 coor : this) {
 			comp.setPosition(coor);
 			if (!comp.markAt().isShip())
 				comp.setMarkAt(Mark.Ship);
@@ -350,10 +349,10 @@ public class ShipComputer extends ShipClass {
 		comp.fillWater(this);
 	}
 
-	public List<Coordinate> getKnownPlaces() {
-		final List<Coordinate> result = new ArrayList<Coordinate>();
+	public List<Coordinate2> getKnownPlaces() {
+		final List<Coordinate2> result = new ArrayList<Coordinate2>();
 		if (searchStatus == SearchStatus.All) {
-			for (final Coordinate coor : this) {
+			for (final Coordinate2 coor : this) {
 				if (comp.messageAt(coor) == null) {
 					result.add(coor);
 				}
@@ -362,11 +361,11 @@ public class ShipComputer extends ShipClass {
 		return result;
 	}
 
-	public List<Coordinate> getMostProbablePlaces(int howManyMax) { // TODO: AI melhorar algoritmo
+	public List<Coordinate2> getMostProbablePlaces(int howManyMax) { // TODO: AI melhorar algoritmo
 		final List<Ship> allPlaces = getAllPlaces();
 		final int[][] field = new int[maxX][maxY];
 		for (final Ship ship : allPlaces) {
-			for (final Coordinate coor : ship) {
+			for (final Coordinate2 coor : ship) {
 				if (comp.messageAt(coor) == null)
 					field[coor.x][coor.y]++;
 			}
@@ -380,11 +379,11 @@ public class ShipComputer extends ShipClass {
 			}
 		}
 
-		Collections.shuffle(listValues, GameClass.random);
+		Collections.shuffle(listValues, ComputerAI.randomAI);
 		Collections.sort(listValues);
 		Collections.reverse(listValues);
 
-		final List<Coordinate> listResult = new ArrayList<Coordinate>(howManyMax);
+		final List<Coordinate2> listResult = new ArrayList<Coordinate2>(howManyMax);
 		for (int i = 0; i < howManyMax && i < listValues.size(); i++) {
 			listResult.add(listValues.get(i));
 		}
@@ -404,7 +403,7 @@ public class ShipComputer extends ShipClass {
 		this.isDestroyed = true;
 	}
 
-	public boolean canBeHited(Coordinate coor) {
+	public boolean canBeHited(Coordinate2 coor) {
 		if (isDestroyed)
 			return false;
 		if (searchStatus == SearchStatus.None) {
@@ -422,14 +421,14 @@ public class ShipComputer extends ShipClass {
 	}
 
 	public boolean canBeDestroyed(Message message) {
-		for (final Coordinate coor : message.getCoors()) {
+		for (final Coordinate2 coor : message.getCoors()) {
 			if (canBeDestroyed(coor))
 				return true;
 		}
 		return false;
 	}
 
-	public boolean canBeDestroyed(Coordinate coor) {
+	public boolean canBeDestroyed(Coordinate2 coor) {
 		if (isDestroyed)
 			return false;
 		if (searchStatus == SearchStatus.All) {
@@ -441,7 +440,7 @@ public class ShipComputer extends ShipClass {
 			for (final Ship ship : list) {
 				boolean possible = true;
 				if (ship.pieceAt(coor)) {
-					for (final Coordinate piece : ship) {
+					for (final Coordinate2 piece : ship) {
 						if (comp.messageAt(piece) == null && !piece.equals(coor)) {
 							possible = false;
 						}
@@ -463,7 +462,7 @@ public class ShipComputer extends ShipClass {
 		return null;
 	}
 
-	public boolean isAKnownSpot(Coordinate coor) {
+	public boolean isAKnownSpot(Coordinate2 coor) {
 		return knownSpots.contains(coor);
 	}
 
@@ -474,8 +473,8 @@ public class ShipComputer extends ShipClass {
 	/**
 	 * return checks if coor is a knownSpot or is near a knownSpot
 	 */
-	public boolean nearKnownSpot(Coordinate coor) {
-		for (final Coordinate knownSpot : knownSpots) {
+	public boolean nearKnownSpot(Coordinate2 coor) {
+		for (final Coordinate2 knownSpot : knownSpots) {
 			if (knownSpot.near(coor)) {
 				return true;
 			}

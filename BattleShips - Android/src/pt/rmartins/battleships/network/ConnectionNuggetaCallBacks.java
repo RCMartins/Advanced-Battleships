@@ -3,7 +3,7 @@ package pt.rmartins.battleships.network;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Ship;
 
 public class ConnectionNuggetaCallBacks implements ConnectionCallback, PlayCallback {
@@ -88,7 +88,7 @@ public class ConnectionNuggetaCallBacks implements ConnectionCallback, PlayCallb
 	}
 
 	@Override
-	public synchronized void receiveShotsAndCounters(List<Coordinate> shotsList, List<Coordinate> counterList) {
+	public synchronized void receiveShotsAndCounters(List<Coordinate2> shotsList, List<Coordinate2> counterList) {
 		for (PlayCallback callback : playCallbacks) {
 			callback.receiveShotsAndCounters(shotsList, counterList);
 		}

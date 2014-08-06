@@ -6,9 +6,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.Game.Mark;
 import pt.rmartins.battleships.objects.GameClass;
@@ -23,6 +24,7 @@ import pt.rmartins.battleships.objects.modes.GameMode;
 import pt.rmartins.battleships.utilities.MyPair;
 import android.util.Log;
 
+@SuppressWarnings("unused")
 public class ComputerAI extends PlayerClass {
 
 	private static final String TAG = ComputerAI.class.getSimpleName();
@@ -32,14 +34,27 @@ public class ComputerAI extends PlayerClass {
 	public static final boolean DEBUG_AI_SHOW_SCREEN = ACTIVATE_DEBUG_AI && true;
 	public static final boolean DEBUG_AI = ACTIVATE_DEBUG_AI && DEBUG_AI_SHOW_SCREEN && true;
 	public static final boolean DEBUG_AI_AUTO_SHOOT = ACTIVATE_DEBUG_AI && true;
+	public static final boolean DEBUG_AI_AUTO_PLACE = ACTIVATE_DEBUG_AI && true;
 	public static final boolean SHOW_MASSIVE_LOGS = Game.DEVELOPER_MODE && false;
+
+	public static Random randomPlaceShips, randomAI;
+
+	static {
+		if (ComputerAI.DEBUG_AI) {
+			randomPlaceShips = new Random(1);
+			randomAI = new Random(1);
+		} else {
+			randomPlaceShips = new Random();
+			randomAI = new Random();
+		}
+	}
 
 	private final List<ShipComputer> searchShips;
 	private final LinkedList<MessageAI> searchMessages;
 	public final int[] shipCount;
 	private boolean shipsLeftToFind;
 
-	public static class CoordinateValue extends Coordinate {
+	public static class CoordinateValue extends Coordinate2 {
 
 		public final int value;
 
@@ -49,7 +64,7 @@ public class ComputerAI extends PlayerClass {
 		}
 
 		@Override
-		public int compareTo(Coordinate o) {
+		public int compareTo(Coordinate2 o) {
 			if (o instanceof CoordinateValue) {
 				final CoordinateValue other = (CoordinateValue) o;
 				return this.value - other.value;
@@ -73,7 +88,10 @@ public class ComputerAI extends PlayerClass {
 	 * shots fired.
 	 */
 	private final List<CoordinateValue> clearShots;
-	public final List<Coordinate> markWaterList;
+	public final List<Coordinate2> markWaterList;
+
+	public boolean ANTIBLOCK_IS_SHOOTING;
+	public int ANTIBLOCK_LAST_SHOT_TURN;
 
 	public ComputerAI(String name, List<Ship> shipsToPlace, GameMode mode, GameClass game, boolean isPlayer1,
 			boolean playingFirst) {
@@ -88,7 +106,10 @@ public class ComputerAI extends PlayerClass {
 		searchMessages = new LinkedList<MessageAI>();
 		shipsLeftToFind = true;
 		clearShots = new ArrayList<CoordinateValue>(maxX * maxY);
-		markWaterList = new ArrayList<Coordinate>();
+		markWaterList = new ArrayList<Coordinate2>();
+
+		ANTIBLOCK_IS_SHOOTING = false;
+		ANTIBLOCK_LAST_SHOT_TURN = -1;
 	}
 
 	public void initialize(List<Ship> shipsToPlace) {
@@ -126,9 +147,14 @@ public class ComputerAI extends PlayerClass {
 	}
 
 	public void playYourTurnAux() {
+		if (DEBUG_AI) {
+			Log.i(TAG, "PlayingAITurn: " + game.getTurnNumber() + " turn");
+			ANTIBLOCK_IS_SHOOTING = true;
+		}
+
 		updateGameStatus();
 
-		final List<Coordinate> shots = new ArrayList<Coordinate>();
+		final List<Coordinate2> shots = new ArrayList<Coordinate2>();
 
 		turnTargetsLockWrite.lock();
 		final int size = turnTargets.size();
@@ -137,18 +163,18 @@ public class ComputerAI extends PlayerClass {
 		final List<SearchShot> shotType = new ArrayList<SearchShot>();
 
 		final List<ShipComputer> knowledgeShips = getKnowledgeShips();
-		final List<Coordinate> knowledgeSpots = new ArrayList<Coordinate>();
+		final List<Coordinate2> knowledgeSpots = new ArrayList<Coordinate2>();
 		final List<ShipComputer> someKnowledgeShips = getSomeKnowledgeShips();
-		final List<Coordinate> someKnowledgeSpots = new ArrayList<Coordinate>(someKnowledgeShips.size());
+		final List<Coordinate2> someKnowledgeSpots = new ArrayList<Coordinate2>(someKnowledgeShips.size());
 
 		for (final ShipComputer ship : knowledgeShips) {
-			final List<Coordinate> list = ship.getKnownPlaces();
+			final List<Coordinate2> list = ship.getKnownPlaces();
 			knowledgeSpots.addAll(list);
 		}
 
-		List<List<Coordinate>> listOfKnowledge = new ArrayList<List<Coordinate>>(someKnowledgeShips.size());
+		List<List<Coordinate2>> listOfKnowledge = new ArrayList<List<Coordinate2>>(someKnowledgeShips.size());
 		for (final ShipComputer ship : someKnowledgeShips) {
-			final List<Coordinate> mostProbablePlaces = ship.getMostProbablePlaces(5);
+			final List<Coordinate2> mostProbablePlaces = ship.getMostProbablePlaces(5);
 			if (!mostProbablePlaces.isEmpty())
 				listOfKnowledge.add(mostProbablePlaces);
 		}
@@ -158,16 +184,16 @@ public class ComputerAI extends PlayerClass {
 			if (index == -1)
 				break;
 			else {
-				final List<Coordinate> list = listOfKnowledge.get(index);
+				final List<Coordinate2> list = listOfKnowledge.get(index);
 				list.remove(0);
 				if (list.isEmpty())
 					listOfKnowledge.remove(index);
 			}
 		}
 
-		for (List<Coordinate> list : listOfKnowledge) {
+		for (List<Coordinate2> list : listOfKnowledge) {
 			if (!list.isEmpty()) {
-				Coordinate coor = list.get(0);
+				Coordinate2 coor = list.get(0);
 				if (!someKnowledgeSpots.contains(coor)) {
 					someKnowledgeSpots.add(coor);
 				}
@@ -193,11 +219,11 @@ public class ComputerAI extends PlayerClass {
 				if (knowledgeSpots.size() >= searchShot.knowledge
 						&& someKnowledgeSpots.size() >= searchShot.someKnowledge) {
 					for (int k = 0; k < searchShot.knowledge; k++) {
-						final Coordinate shot = knowledgeSpots.get(k);
+						final Coordinate2 shot = knowledgeSpots.get(k);
 						shots.add(shot);
 					}
 					for (int k = 0; k < searchShot.someKnowledge; k++) {
-						final Coordinate shot = someKnowledgeSpots.get(k);
+						final Coordinate2 shot = someKnowledgeSpots.get(k);
 						shots.add(shot);
 					}
 					shots.addAll(getSearchShots(shots, size - shots.size()));
@@ -221,11 +247,11 @@ public class ComputerAI extends PlayerClass {
 					if (knowledgeSpots.size() >= searchShot.knowledge
 							&& someKnowledgeSpots.size() >= searchShot.someKnowledge) {
 						for (int k = 0; k < searchShot.knowledge; k++) {
-							final Coordinate shot = knowledgeSpots.get(k);
+							final Coordinate2 shot = knowledgeSpots.get(k);
 							shots.add(shot);
 						}
 						for (int k = 0; k < searchShot.someKnowledge; k++) {
-							final Coordinate shot = someKnowledgeSpots.get(k);
+							final Coordinate2 shot = someKnowledgeSpots.get(k);
 							shots.add(shot);
 						}
 						break;
@@ -240,7 +266,7 @@ public class ComputerAI extends PlayerClass {
 		}
 
 		synchronized (game) {
-			for (final Coordinate shot : shots)
+			for (final Coordinate2 shot : shots)
 				this.chooseTarget(shot);
 		}
 
@@ -263,7 +289,7 @@ public class ComputerAI extends PlayerClass {
 
 				fors: for (int y = 0; y < maxY; y++) {
 					for (int x = 0; x < maxX; x++) {
-						Coordinate newPosition = new Coordinate(x, y);
+						Coordinate2 newPosition = new Coordinate2(x, y);
 						if (messageAt(x, y) == null && !shots.contains(newPosition)) {
 							setPosition(newPosition);
 							chooseTarget();
@@ -276,16 +302,27 @@ public class ComputerAI extends PlayerClass {
 				}
 				turnTargetsLockWrite.unlock();
 
-				shotAll();
+				if (shotAll() == ShotAllResults.ShotsFired) {
+					ANTIBLOCK_LAST_SHOT_TURN = game.getTurnNumber();
+					ANTIBLOCK_IS_SHOOTING = false;
+				}
 			}
+
+			if (DEBUG_AI)
+				Log.i(TAG, "Shooting blocked mode!");
+		} else {
+			if (DEBUG_AI)
+				Log.i(TAG, "Shooting normal mode: " + shots.toString());
+			ANTIBLOCK_LAST_SHOT_TURN = game.getTurnNumber();
+			ANTIBLOCK_IS_SHOOTING = false;
 		}
 	}
 
-	private int interferenceOnList(List<List<Coordinate>> listOfKnowledge) {
+	private int interferenceOnList(List<List<Coordinate2>> listOfKnowledge) {
 		for (int i = 0; i < listOfKnowledge.size(); i++) {
 			for (int j = i + 1; j < listOfKnowledge.size(); j++) {
-				Coordinate c1 = listOfKnowledge.get(i).get(0);
-				Coordinate c2 = listOfKnowledge.get(j).get(0);
+				Coordinate2 c1 = listOfKnowledge.get(i).get(0);
+				Coordinate2 c2 = listOfKnowledge.get(j).get(0);
 				if (interferShots(c1, c2)) {
 					return Math.random() < .5 ? i : j;
 				}
@@ -305,15 +342,15 @@ public class ComputerAI extends PlayerClass {
 	/**
 	 * Find remaining spots left to shoot
 	 */
-	private void moreSomeKnowledgeShots(List<Coordinate> shots, int shotsLeft, List<ShipComputer> someKnowledgeShips) {
+	private void moreSomeKnowledgeShots(List<Coordinate2> shots, int shotsLeft, List<ShipComputer> someKnowledgeShips) {
 		int tries = 0;
 		final int MAX_TRIES = 50;
 		while (shotsLeft > 0 && tries <= MAX_TRIES) {
 
-			final List<Coordinate> someKnowledgeSpots = new ArrayList<Coordinate>();
+			final List<Coordinate2> someKnowledgeSpots = new ArrayList<Coordinate2>();
 			for (final ShipComputer ship : someKnowledgeShips) {
-				final List<Coordinate> list = ship.getMostProbablePlaces(1);
-				for (final Coordinate coor : list) {
+				final List<Coordinate2> list = ship.getMostProbablePlaces(1);
+				for (final Coordinate2 coor : list) {
 					if (!shots.contains(coor) && !someKnowledgeSpots.contains(coor)) {
 						someKnowledgeSpots.add(coor);
 					}
@@ -324,7 +361,7 @@ public class ComputerAI extends PlayerClass {
 			 * has they are the last shots of the match it doesn't matter that they interfere with each other!
 			 */
 
-			Collections.shuffle(someKnowledgeSpots, GameClass.random);
+			Collections.shuffle(someKnowledgeSpots, randomAI);
 
 			for (int i = 0; i < someKnowledgeSpots.size(); i++) {
 				shots.add(someKnowledgeSpots.get(i));
@@ -354,7 +391,7 @@ public class ComputerAI extends PlayerClass {
 		for (final ShipComputer ship : searchShips) {
 			final SearchStatus searchStatus = ship.getSearchStatus();
 			if (searchStatus == SearchStatus.All) {
-				for (final Coordinate coor : ship) {
+				for (final Coordinate2 coor : ship) {
 					for (int i = -1; i < 1; i++) {
 						for (int j = -1; j < 1; j++) {
 							final int x = coor.x + i;
@@ -369,7 +406,7 @@ public class ComputerAI extends PlayerClass {
 				final List<Ship> allPlaces = ship.getAllPlaces();
 				for (Iterator<Ship> iterator = allPlaces.iterator(); iterator.hasNext();) {
 					Ship possibility = iterator.next();
-					for (final Coordinate coor : possibility) {
+					for (final Coordinate2 coor : possibility) {
 						field[coor.x][coor.y] += 1;
 						for (int i = -1; i < 1; i++) {
 							for (int j = -1; j < 1; j++) {
@@ -391,7 +428,7 @@ public class ComputerAI extends PlayerClass {
 					clearShots.add(new CoordinateValue(x, y, field[x][y]));
 			}
 		}
-		Collections.shuffle(clearShots, GameClass.random);
+		Collections.shuffle(clearShots, randomAI);
 		Collections.sort(clearShots);
 	}
 
@@ -430,7 +467,7 @@ public class ComputerAI extends PlayerClass {
 				lastShipId = messageUnit.shipId;
 			}
 			if (all1spaceKills) {
-				for (final Coordinate coor : lastMessage.getCoors()) {
+				for (final Coordinate2 coor : lastMessage.getCoors()) {
 					for (final ShipComputer ship : searchShips) {
 						if (ship.getId() == lastShipId && ship.getSearchStatus() == SearchStatus.None) {
 							ship.addKnownSpot(coor);
@@ -443,7 +480,7 @@ public class ComputerAI extends PlayerClass {
 				int maxDifferentShips;
 				{
 					maxDifferentShips = 0;
-					final List<Coordinate> coors = lastMessage.getCoors();
+					final List<Coordinate2> coors = lastMessage.getCoors();
 					for (int i = 0; i < coors.size(); i++) {
 						boolean near = false;
 						for (int j = i + 1; j < coors.size(); j++) {
@@ -458,7 +495,8 @@ public class ComputerAI extends PlayerClass {
 				}
 				int diferentShips = maxDifferentShips;
 
-				for (final MessageUnit messageUnit : parts) {
+				Iterable<MessageUnit> partsList = new ArrayList<MessageUnit>(parts);
+				for (final MessageUnit messageUnit : partsList) {
 					final int shipId = messageUnit.shipId;
 					final TypesMessageUnits type = messageUnit.type;
 					if (type == TypesMessageUnits.AShot) {
@@ -550,11 +588,15 @@ public class ComputerAI extends PlayerClass {
 		 * Update all ships
 		 */
 		for (final ShipComputer ship : searchShips) {
-			ship.updateAllPlaces();
+			List<Ship> list = ship.updateAllPlaces();
+			if (ComputerAI.DEBUG_AI && list.isEmpty()) {
+				//throw new RuntimeException("Empty ship possibilities! " + ship.toString());
+				Log.i(TAG, "Empty ship possibilities! " + ship.toString());
+			}
 		}
 		markWaterList.clear();
 
-		writeDebug(initialTime, DEBUG_INDEX++);
+		//		writeDebug(initialTime, DEBUG_INDEX++);
 
 		shipsLeftToFind = false;
 		for (final ShipComputer ship : searchShips) {
@@ -564,13 +606,13 @@ public class ComputerAI extends PlayerClass {
 			}
 		}
 
-		List<Coordinate> waterToRemoveList = new LinkedList<Coordinate>();
+		List<Coordinate2> waterToRemoveList = new LinkedList<Coordinate2>();
 		for (final MessageAI message : searchMessages) {
 			if (!message.isAllWater() && message.hasSomeWater()) {
 				/**
 				 * Verify if any of the coordinates of the message is water
 				 */
-				for (final Coordinate coor : message.getCoors()) {
+				for (final Coordinate2 coor : message.getCoors()) {
 					if (markAt(coor) == Mark.None) {
 						found_label: {
 							for (final ShipComputer ship : searchShips) {
@@ -596,9 +638,9 @@ public class ComputerAI extends PlayerClass {
 					/**
 					 * test if the unknown message coors are water:
 					 */
-					final List<Coordinate> unknownMCoorList = new ArrayList<Coordinate>();
+					final List<Coordinate2> unknownMCoorList = new ArrayList<Coordinate2>();
 					int count = 0;
-					for (final Coordinate coor : message.getCoors()) {
+					for (final Coordinate2 coor : message.getCoors()) {
 						if (markAt(coor).isWater()) {
 							count++;
 						} else if (!knownCoor(coor)) {
@@ -611,7 +653,7 @@ public class ComputerAI extends PlayerClass {
 						/**
 						 * Marks remaining message coors with Mark.Ship
 						 */
-						for (final Coordinate coor : unknownMCoorList) {
+						for (final Coordinate2 coor : unknownMCoorList) {
 							if (markAt(coor) == Mark.None) {
 								setMarkAt(coor, Mark.Ship);
 								updatedSomething = true;
@@ -629,7 +671,7 @@ public class ComputerAI extends PlayerClass {
 						for (final ShipComputer ship : searchShips) {
 							final MyPair<MessageAI, Boolean> pair = ship.hasAnyMessage(message);
 							if (ship.getSearchStatus() == SearchStatus.Some && pair != null) {
-								for (final Coordinate coor : unknownMCoorList) {
+								for (final Coordinate2 coor : unknownMCoorList) {
 									boolean coorOwner = true;
 									final List<Ship> allPlaces = ship.getAllPlaces();
 									for (final Ship possibility : allPlaces) {
@@ -659,9 +701,9 @@ public class ComputerAI extends PlayerClass {
 					/**
 					 * try to find missing water
 					 */
-					final List<Coordinate> unknownMCoorList = new ArrayList<Coordinate>();
+					final List<Coordinate2> unknownMCoorList = new ArrayList<Coordinate2>();
 					int count = 0;
-					for (final Coordinate coor : message.getCoors()) {
+					for (final Coordinate2 coor : message.getCoors()) {
 						if (markAt(coor).isShip()) {
 							count++;
 						} else if (!knownCoor(coor) && markAt(coor) == Mark.None) {
@@ -674,7 +716,7 @@ public class ComputerAI extends PlayerClass {
 						/**
 						 * Marks remaining message coors with Mark.Water
 						 */
-						for (Coordinate coor : unknownMCoorList) {
+						for (Coordinate2 coor : unknownMCoorList) {
 							waterToRemoveList.add(coor);
 						}
 					}
@@ -683,7 +725,7 @@ public class ComputerAI extends PlayerClass {
 		}
 
 		if (!waterToRemoveList.isEmpty()) {
-			for (Coordinate coor : waterToRemoveList) {
+			for (Coordinate2 coor : waterToRemoveList) {
 				setMarkAt(coor, Mark.Water);
 			}
 			updatedSomething = true;
@@ -696,7 +738,7 @@ public class ComputerAI extends PlayerClass {
 			}
 		}
 
-		writeDebug(initialTime, DEBUG_INDEX++);
+		//		writeDebug(initialTime, DEBUG_INDEX++);
 
 		// testa se alguma das jogadas marcadas pelo barco, existe alguma coordenada que passa a "known"
 		// exmeplo: na segunda jogada sabemos que na coordena (x,y) é o barco, e não existe ambiguidade, podemos marcar
@@ -709,13 +751,13 @@ public class ComputerAI extends PlayerClass {
 				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
 					final Message m = pair.first;
 					int equalCount = -1;
-					List<Coordinate> equalList = new ArrayList<Coordinate>();
+					List<Coordinate2> equalList = new ArrayList<Coordinate2>();
 					boolean allEqual = true;
 					final List<Ship> allPlaces = ship.getAllPlaces();
 					for (final Ship possibility : allPlaces) {
 						int count = 0;
-						final List<Coordinate> list = new ArrayList<Coordinate>();
-						for (final Coordinate coor : m.getCoors()) {
+						final List<Coordinate2> list = new ArrayList<Coordinate2>();
+						for (final Coordinate2 coor : m.getCoors()) {
 							if (possibility.pieceAt(coor)) {
 								list.add(coor);
 								count++;
@@ -734,10 +776,10 @@ public class ComputerAI extends PlayerClass {
 					// TODO: AI testar isto
 					if (allEqual && !equalList.isEmpty()) {
 						removeList.add(pair);
-						for (Coordinate coor : equalList) {
+						for (Coordinate2 coor : equalList) {
 							ship.addKnownSpot(coor);
 						}
-						for (Coordinate coor : equalList) {
+						for (Coordinate2 coor : equalList) {
 							if (markAt(coor) == Mark.None)
 								setMarkAt(coor, Mark.Ship);
 						}
@@ -751,7 +793,7 @@ public class ComputerAI extends PlayerClass {
 			}
 		}
 
-		writeDebug(initialTime, DEBUG_INDEX++);
+		//		writeDebug(initialTime, DEBUG_INDEX++);
 
 		/**
 		 * NEW STUFF :D
@@ -764,16 +806,16 @@ public class ComputerAI extends PlayerClass {
 				if (ship.getNumberPieces() == 1) {
 					for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
 						final MessageAI message = pair.first;
-						final List<Coordinate> coors = message.getCoors();
-						final List<Coordinate> coorsCopy = new LinkedList<Coordinate>(coors);
-						for (Iterator<Coordinate> iterator = coorsCopy.iterator(); iterator.hasNext();) {
-							Coordinate coor = iterator.next();
+						final List<Coordinate2> coors = message.getCoors();
+						final List<Coordinate2> coorsCopy = new LinkedList<Coordinate2>(coors);
+						for (Iterator<Coordinate2> iterator = coorsCopy.iterator(); iterator.hasNext();) {
+							Coordinate2 coor = iterator.next();
 							if (knownCoor(coor))
 								iterator.remove();
 						}
 						if (coorsCopy.size() == 1) {
 							removeList.add(pair);
-							final Coordinate coor = coorsCopy.get(0);
+							final Coordinate2 coor = coorsCopy.get(0);
 							ship.addKnownSpot(coor);
 							if (markAt(coor) == Mark.None)
 								setMarkAt(coor, Mark.Ship);
@@ -788,26 +830,30 @@ public class ComputerAI extends PlayerClass {
 			}
 		}
 
-		writeDebug(initialTime, DEBUG_INDEX++);
+		//		writeDebug(initialTime, DEBUG_INDEX++);
 
 		/**
 		 * Place water/ship in the common places of the ship possibilities
 		 */
 		for (final ShipComputer ship : searchShips) {
 			if (ship.getSearchStatus() == SearchStatus.Some) {
-				final Set<Coordinate> waterCommonParts = new HashSet<Coordinate>();
-				final Set<Coordinate> shipCommonParts = new HashSet<Coordinate>();
+				final Set<Coordinate2> waterCommonParts = new HashSet<Coordinate2>();
+				final Set<Coordinate2> shipCommonParts = new HashSet<Coordinate2>();
 				final List<Ship> allPlaces = ship.getAllPlaces();
+				if (ComputerAI.DEBUG_AI && allPlaces.isEmpty()) {
+					Log.i(TAG, "Empty ship possibilities! " + ship.toString());
+					break;
+				}
 				Iterator<Ship> iterator = allPlaces.iterator();
 
 				Ship firstPosition = iterator.next();
-				waterCommonParts.addAll(Coordinate.allAround(firstPosition));
+				waterCommonParts.addAll(Coordinate2.allAround(firstPosition));
 				waterCommonParts.removeAll(firstPosition.getListPieces());
 				shipCommonParts.addAll(firstPosition.getListPieces());
 				for (; iterator.hasNext();) {
 					final Ship possibility = iterator.next();
 					if (!waterCommonParts.isEmpty()) {
-						final Set<Coordinate> allAround = Coordinate.allAround(possibility);
+						final Set<Coordinate2> allAround = Coordinate2.allAround(possibility);
 						allAround.removeAll(possibility.getListPieces());
 						waterCommonParts.retainAll(allAround);
 					}
@@ -816,13 +862,13 @@ public class ComputerAI extends PlayerClass {
 					if (waterCommonParts.isEmpty() && shipCommonParts.isEmpty())
 						break;
 				}
-				for (final Coordinate coor : waterCommonParts) {
+				for (final Coordinate2 coor : waterCommonParts) {
 					if (game.isInsideField(coor) && markAt(coor) == Mark.None) {
 						setMarkAt(coor, Mark.Water);
 						updatedSomething = true;
 					}
 				}
-				for (final Coordinate coor : shipCommonParts) {
+				for (final Coordinate2 coor : shipCommonParts) {
 					if (game.isInsideField(coor) && markAt(coor) == Mark.None) {
 						setMarkAt(coor, Mark.Ship);
 						updatedSomething = true;
@@ -836,11 +882,13 @@ public class ComputerAI extends PlayerClass {
 	}
 
 	private void writeDebug(long initialTime, int i) {
-		final long finalTime = System.currentTimeMillis();
-		Log.i(TAG, "updateAllRefecences(" + i + "): " + (finalTime - initialTime));
+		if (DEBUG_AI) {
+			final long finalTime = System.currentTimeMillis();
+			Log.i(TAG, "updateAllRefecences(" + i + "): " + (finalTime - initialTime));
+		}
 	}
 
-	private boolean knownCoor(Coordinate coor) {
+	private boolean knownCoor(Coordinate2 coor) {
 		for (final ShipComputer ship : searchShips) {
 			if (ship.isAKnownSpot(coor))
 				return true;
@@ -870,7 +918,7 @@ public class ComputerAI extends PlayerClass {
 		tryToSetReady();
 	}
 
-	private boolean interferShots(Coordinate coor1, Coordinate coor2) {
+	private boolean interferShots(Coordinate2 coor1, Coordinate2 coor2) {
 		for (final ShipComputer ship : searchShips) {
 			if (ship.canBeHited(coor1) && ship.canBeHited(coor2)) {
 				return true;
@@ -879,8 +927,8 @@ public class ComputerAI extends PlayerClass {
 		return false;
 	}
 
-	private List<Coordinate> getSearchShots(List<Coordinate> previousShots, int size) {
-		final List<Coordinate> list = new ArrayList<Coordinate>(size);
+	private List<Coordinate2> getSearchShots(List<Coordinate2> previousShots, int size) {
+		final List<Coordinate2> list = new ArrayList<Coordinate2>(size);
 		if (size > 0) {
 			generateClearShots();
 
@@ -900,13 +948,13 @@ public class ComputerAI extends PlayerClass {
 						continue;
 
 					boolean canAdd = true;
-					for (Coordinate other : previousShots) {
+					for (Coordinate2 other : previousShots) {
 						if (coor.dist(other) < maxDistTry) {
 							canAdd = false;
 							break;
 						}
 					}
-					for (Coordinate other : list) {
+					for (Coordinate2 other : list) {
 						if (coor.dist(other) < maxDistTry) {
 							canAdd = false;
 							break;
@@ -932,7 +980,7 @@ public class ComputerAI extends PlayerClass {
 			if (ship.getSearchStatus() == SearchStatus.All && !ship.isDestroyed())
 				result.add(ship);
 		}
-		Collections.shuffle(result, GameClass.random);
+		Collections.shuffle(result, randomAI);
 		return result;
 	}
 
@@ -942,11 +990,11 @@ public class ComputerAI extends PlayerClass {
 			if (ship.getSearchStatus() == SearchStatus.Some)
 				result.add(ship);
 		}
-		Collections.shuffle(result, GameClass.random);
+		Collections.shuffle(result, randomAI);
 		return result;
 	}
 
-	public ShipComputer nearKnownSpot(Coordinate coor) {
+	public ShipComputer nearKnownSpot(Coordinate2 coor) {
 		for (final ShipComputer ship : searchShips) {
 			if (ship.nearKnownSpot(coor))
 				return ship;
@@ -958,9 +1006,9 @@ public class ComputerAI extends PlayerClass {
 	protected void setMarkAt(int x, int y, Mark mark) {
 		super.setMarkAt(x, y, mark);
 		if (mark.isWater()) {
-			markWaterList.add(new Coordinate(x, y));
+			markWaterList.add(new Coordinate2(x, y));
 
-			Coordinate markCoor = new Coordinate(x, y);
+			Coordinate2 markCoor = new Coordinate2(x, y);
 			for (final ShipComputer ship : searchShips) {
 				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
 					final MessageAI message = pair.first;
@@ -980,7 +1028,7 @@ public class ComputerAI extends PlayerClass {
 				}
 			}
 		} else if (mark.isShip()) {
-			Coordinate markCoor = new Coordinate(x, y);
+			Coordinate2 markCoor = new Coordinate2(x, y);
 			for (final ShipComputer ship : searchShips) {
 				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
 					final MessageAI message = pair.first;
@@ -1001,7 +1049,7 @@ public class ComputerAI extends PlayerClass {
 				for (final MyPair<MessageAI, Boolean> pair : ship.getPossibleSpotsMessages()) {
 					final MessageAI message = pair.first;
 					if (message.getTurnId().equals(destroyedMessage.getTurnId())) {
-						for (Coordinate coor : destroyedShip.getListPieces()) {
+						for (Coordinate2 coor : destroyedShip.getListPieces()) {
 							if (message.getCoors().contains(coor)) {
 								message.getCoors().remove(coor);
 								message.removeShip(destroyedShip.getId(), killerShot);

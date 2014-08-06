@@ -44,8 +44,8 @@ public class Message {
 	}
 
 	protected final List<MessageUnit> messageTokens;
-	protected final List<Coordinate> coors;
-	protected final List<Coordinate> counters;
+	protected final List<Coordinate2> coors;
+	protected final List<Coordinate2> counters;
 
 	private int totalHits;
 	private final int[] hits;
@@ -56,8 +56,8 @@ public class Message {
 	private int kills;
 	protected final boolean wasFirstBlood;
 
-	public Message(String turnType, int turnNumber, List<MessageUnit> messageTokens, List<Coordinate> coors,
-			List<Coordinate> counters, boolean wasFirstBlood) {
+	public Message(String turnType, int turnNumber, List<MessageUnit> messageTokens, List<Coordinate2> coors,
+			List<Coordinate2> counters, boolean wasFirstBlood) {
 		this.turnType = turnType;
 		this.turnNumber = turnNumber;
 		this.messageTokens = messageTokens;
@@ -144,11 +144,11 @@ public class Message {
 		return coors.size() - getHits();
 	}
 
-	public List<Coordinate> getCoors() {
+	public List<Coordinate2> getCoors() {
 		return coors;
 	}
 
-	public List<Coordinate> getCounter() {
+	public List<Coordinate2> getCounter() {
 		return counters;
 	}
 

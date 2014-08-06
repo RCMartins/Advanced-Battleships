@@ -21,4 +21,6 @@ public interface UserInterface {
 	public boolean backPressed();
 
 	public void clean();
+
+	public void initializeGUI(int maxX, int maxY);
 }

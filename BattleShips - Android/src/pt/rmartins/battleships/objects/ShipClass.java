@@ -19,13 +19,13 @@ public class ShipClass implements Ship {
 	protected final int id;
 	protected int rotation;
 	protected int x, y;
-	private List<Coordinate> updatedCoordinateList;
+	private List<Coordinate2> updatedCoordinateList;
 	protected int tick;
 	private int iteratorTick;
-	private int pieceAtTick;
+	private final int pieceAtTick;
 	private final Set<Coordinate> pieceAt;
 
-	public ShipClass(int id, int rotation, Coordinate coor) {
+	public ShipClass(int id, int rotation, Coordinate2 coor) {
 		this(id, rotation, coor.x, coor.y);
 	}
 
@@ -130,7 +130,7 @@ public class ShipClass implements Ship {
 	}
 
 	@Override
-	public synchronized void moveTo(Coordinate position) {
+	public synchronized void moveTo(Coordinate2 position) {
 		tick++;
 		this.x = position.x;
 		this.y = position.y;
@@ -149,23 +149,15 @@ public class ShipClass implements Ship {
 	}
 
 	@Override
-	public synchronized boolean near(Coordinate coor) {
-		return coor.near(this);
-	}
-
-	@Override
 	public synchronized boolean near(int x, int y) {
-		return near(new Coordinate(x, y));
+		return COOR_CACHE.set(x, y).near(this);
 	}
 
 	@Override
-	public synchronized boolean near(Ship... ships) {
-		for (final Ship ship : ships) {
-			for (final Coordinate otherCoor : ship) {
-				if (near(otherCoor)) {
-					return true;
-				}
-			}
+	public synchronized boolean near(int x, int y, int dist) {
+		for (final Coordinate2 coor : this) {
+			if (coor.near(x, y, dist))
+				return true;
 		}
 		return false;
 	}
@@ -173,8 +165,8 @@ public class ShipClass implements Ship {
 	@Override
 	public synchronized boolean near(Iterable<Ship> ships) {
 		for (final Ship ship : ships) {
-			for (final Coordinate otherCoor : ship) {
-				if (near(otherCoor)) {
+			for (final Coordinate2 otherCoor : ship) {
+				if (otherCoor.near(this)) {
 					return true;
 				}
 			}
@@ -182,22 +174,29 @@ public class ShipClass implements Ship {
 		return false;
 	}
 
+	private final Coordinate2Editor COOR_CACHE = new Coordinate2Editor();
+
 	@Override
 	public synchronized boolean pieceAt(int x, int y) {
-		return pieceAt(new Coordinate(x, y));
+		return pieceAt(COOR_CACHE.set(x, y));
 	}
 
 	@Override
-	public synchronized boolean pieceAt(Coordinate coordinate) {
-		if (tick != pieceAtTick) {
-			pieceAtTick = tick;
-
-			pieceAt.clear();
-			for (final Coordinate coor : this) {
-				pieceAt.add(coor);
-			}
+	public synchronized boolean pieceAt(Coordinate compareCoor) {
+		//		if (tick != pieceAtTick) {
+		//			pieceAtTick = tick;
+		//
+		//			pieceAt.clear();
+		//			for (final Coordinate2 coor : this) {
+		//				pieceAt.add(coor);
+		//			}
+		//		}
+		//		return pieceAt.contains(compareCoor);
+		for (final Coordinate2 coor : this) {
+			if (coor.equals(compareCoor))
+				return true;
 		}
-		return pieceAt.contains(coordinate);
+		return false;
 	}
 
 	@Override
@@ -206,7 +205,7 @@ public class ShipClass implements Ship {
 	}
 
 	@Override
-	public synchronized Coordinate trimShip(int maxX, int maxY) {
+	public synchronized Coordinate2 trimShip(int maxX, int maxY) {
 		tick++;
 
 		int mX = x;
@@ -227,15 +226,15 @@ public class ShipClass implements Ship {
 			translate(0, -mY + maxY - 1);
 		}
 
-		return new Coordinate(minX(), minY());
+		return new Coordinate2(minX(), minY());
 	}
 
 	@Override
-	public synchronized Iterator<Coordinate> iterator() {
+	public synchronized Iterator<Coordinate2> iterator() {
 		if (tick != iteratorTick) {
 			iteratorTick = tick;
 
-			updatedCoordinateList = new ArrayList<Coordinate>(ShipClass.getShipParts(id, rotation));
+			updatedCoordinateList = new ArrayList<Coordinate2>(ShipClass.getShipParts(id, rotation));
 			for (int i = 0; i < updatedCoordinateList.size(); i++) {
 				updatedCoordinateList.set(i, updatedCoordinateList.get(i).translate(x, y));
 			}
@@ -244,11 +243,11 @@ public class ShipClass implements Ship {
 	}
 
 	@Override
-	public synchronized List<Coordinate> getListPieces() {
+	public synchronized List<Coordinate2> getListPieces() {
 		if (tick != iteratorTick) {
 			iteratorTick = tick;
 
-			updatedCoordinateList = new ArrayList<Coordinate>(ShipClass.getShipParts(id, rotation));
+			updatedCoordinateList = new ArrayList<Coordinate2>(ShipClass.getShipParts(id, rotation));
 			for (int i = 0; i < updatedCoordinateList.size(); i++) {
 				updatedCoordinateList.set(i, updatedCoordinateList.get(i).translate(x, y));
 			}
@@ -257,13 +256,13 @@ public class ShipClass implements Ship {
 	}
 
 	@Override
-	public synchronized Coordinate rotateClockwise(int maxX, int maxY) {
+	public synchronized Coordinate2 rotateClockwise(int maxX, int maxY) {
 		rotation = (rotation + 1) % numberOfRotations(id);
 		return trimShip(maxX, maxY);
 	}
 
 	@Override
-	public synchronized Coordinate rotateTo(int rotation, int maxX, int maxY) {
+	public synchronized Coordinate2 rotateTo(int rotation, int maxX, int maxY) {
 		if (rotation >= numberOfRotations(id))
 			throw new RuntimeException();
 		this.rotation = rotation;
@@ -292,7 +291,7 @@ public class ShipClass implements Ship {
 	 * @return if the ship was destroyed by the player
 	 */
 	public static boolean isSunk(Ship ship, Player player) {
-		for (final Coordinate coor : ship) {
+		for (final Coordinate2 coor : ship) {
 			if (player.messageAt(coor) == null) {
 				return false;
 			}
@@ -334,7 +333,7 @@ public class ShipClass implements Ship {
 			final int mY = maxY - ShipClass.sizeY(id, k) + 1;
 			for (int y = 0; y < mY; y++) {
 				for (int x = 0; x < mX; x++) {
-					allPossiblePositions.add(new ShipClass(id, k, new Coordinate(x, y)));
+					allPossiblePositions.add(new ShipClass(id, k, new Coordinate2(x, y)));
 				}
 			}
 		}
@@ -359,13 +358,13 @@ public class ShipClass implements Ship {
 		return data;
 	}
 
-	public static List<Ship> getAllPossibilities(int id, Coordinate coor) {
+	public static List<Ship> getAllPossibilities(int id, Coordinate2 coor) {
 		final List<Ship> list = new LinkedList<Ship>();
 		final List<ShipData> rotations = ShipsInfo.get(id);
 
 		for (int nRotation = 0; nRotation < rotations.size(); nRotation++) {
 			final ShipData shipData = rotations.get(nRotation);
-			for (final Coordinate part : shipData.parts) {
+			for (final Coordinate2 part : shipData.parts) {
 				list.add(new ShipClass(id, nRotation, coor.x - part.x, coor.y - part.y));
 			}
 		}
@@ -373,7 +372,7 @@ public class ShipClass implements Ship {
 		return list;
 	}
 
-	public static List<Coordinate> getShipParts(int id, int rotation) {
+	public static List<Coordinate2> getShipParts(int id, int rotation) {
 		return ShipsInfo.get(id).get(rotation).parts;
 	}
 
@@ -420,10 +419,10 @@ public class ShipClass implements Ship {
 	public static class ShipData {
 
 		private final Map<String, String> name;
-		private final List<Coordinate> parts;
+		private final List<Coordinate2> parts;
 		public final int sizeX, sizeY, space;
 
-		public ShipData(Map<String, String> names, List<Coordinate> parts) {
+		public ShipData(Map<String, String> names, List<Coordinate2> parts) {
 			this.name = names;
 			this.parts = Collections.unmodifiableList(parts);
 			sizeX = sizeX();
@@ -432,14 +431,14 @@ public class ShipClass implements Ship {
 		}
 
 		public boolean equalsAllPiecies(ShipData s) {
-			final Set<Coordinate> set1 = new TreeSet<Coordinate>(parts);
-			final Set<Coordinate> set2 = new TreeSet<Coordinate>(s.parts);
+			final Set<Coordinate2> set1 = new TreeSet<Coordinate2>(parts);
+			final Set<Coordinate2> set2 = new TreeSet<Coordinate2>(s.parts);
 			return set1.equals(set2);
 		}
 
 		private int sizeX() {
 			int sizeX = parts == null || parts.isEmpty() ? 0 : parts.get(0).x;
-			for (final Coordinate coor : parts) {
+			for (final Coordinate2 coor : parts) {
 				if (coor.x > sizeX) {
 					sizeX = coor.x;
 				}
@@ -449,7 +448,7 @@ public class ShipClass implements Ship {
 
 		private int sizeY() {
 			int sizeY = parts == null || parts.isEmpty() ? 0 : parts.get(0).y;
-			for (final Coordinate coor : parts) {
+			for (final Coordinate2 coor : parts) {
 				if (coor.y > sizeY) {
 					sizeY = coor.y;
 				}
@@ -458,12 +457,12 @@ public class ShipClass implements Ship {
 		}
 
 		private int space() {
-			final List<Coordinate> p = new ArrayList<Coordinate>();
-			for (final Coordinate coor : this.parts) {
+			final List<Coordinate2> p = new ArrayList<Coordinate2>();
+			for (final Coordinate2 coor : this.parts) {
 				p.add(coor.translate(1, 1));
 			}
 			final boolean occupied[][] = new boolean[this.sizeX + 2][this.sizeY + 2];
-			for (final Coordinate coor : p) {
+			for (final Coordinate2 coor : p) {
 				for (int i = -1; i <= 1; i++) {
 					for (int j = -1; j <= 1; j++) {
 						occupied[coor.x + i][coor.y + j] = true;
@@ -480,9 +479,9 @@ public class ShipClass implements Ship {
 			return count;
 		}
 
-		private static int minX(List<Coordinate> list) {
+		private static int minX(List<Coordinate2> list) {
 			int minX = list == null || list.isEmpty() ? 0 : list.get(0).x;
-			for (final Coordinate coor : list) {
+			for (final Coordinate2 coor : list) {
 				if (coor.x < minX) {
 					minX = coor.x;
 				}
@@ -490,9 +489,9 @@ public class ShipClass implements Ship {
 			return minX;
 		}
 
-		private static int minY(List<Coordinate> list) {
+		private static int minY(List<Coordinate2> list) {
 			int minY = list == null || list.isEmpty() ? 0 : list.get(0).y;
-			for (final Coordinate coor : list) {
+			for (final Coordinate2 coor : list) {
 				if (coor.y < minY) {
 					minY = coor.y;
 				}
@@ -501,13 +500,13 @@ public class ShipClass implements Ship {
 		}
 
 		private ShipData rotateShipClockwise() {
-			final List<Coordinate> list = new ArrayList<Coordinate>(this.parts.size());
+			final List<Coordinate2> list = new ArrayList<Coordinate2>(this.parts.size());
 
 			for (int i = 0; i < this.parts.size(); i++) {
 				final int nX = -this.parts.get(i).y;
 				final int nY = this.parts.get(i).x;
 
-				list.add(i, new Coordinate(nX, nY));
+				list.add(i, new Coordinate2(nX, nY));
 			}
 
 			final int mX = ShipData.minX(list);
@@ -522,9 +521,9 @@ public class ShipClass implements Ship {
 			return new ShipData(name, list);
 		}
 
-		private static void translate(List<Coordinate> list, int x, int y) {
+		private static void translate(List<Coordinate2> list, int x, int y) {
 			for (int i = 0; i < list.size(); i++) {
-				list.set(i, new Coordinate(list.get(i).x + x, list.get(i).y + y));
+				list.set(i, new Coordinate2(list.get(i).x + x, list.get(i).y + y));
 			}
 		}
 
@@ -534,7 +533,7 @@ public class ShipClass implements Ship {
 		}
 	}
 
-	public static void createNewShip(Map<String, String> names, List<Coordinate> parts) {
+	public static void createNewShip(Map<String, String> names, List<Coordinate2> parts) {
 		final ShipData shipData = new ShipData(names, parts);
 		ShipClass.createAllRotationPossibilities(shipData);
 	}

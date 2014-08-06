@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     
-    <string name="app_name">Advanced Battleships</string>
-    
     <!-- PUT YOUR FACEBOOK APP ID -->
 	<string name="app_id">293195367515561</string>
     
+    <string name="app_name">Advanced Battleships</string>
+    <!-- <string name="versionName">0.6</string> --> 
     <string-array name="languages"><item>en-US</item><item>pt</item></string-array>
     
 </resources>

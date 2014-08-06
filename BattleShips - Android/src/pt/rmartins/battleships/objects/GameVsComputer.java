@@ -2,10 +2,9 @@ package pt.rmartins.battleships.objects;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import pt.rmartins.battleships.objects.PlayerClass.Shot.KindShot;
 import pt.rmartins.battleships.objects.ai.ComputerAI;
@@ -19,6 +18,7 @@ import pt.rmartins.battleships.objects.userinterface.PlacingShipsScreen;
 import pt.rmartins.battleships.objects.userinterface.PlayInterface;
 import pt.rmartins.battleships.objects.userinterface.PlayingScreen;
 import android.app.Activity;
+import android.os.AsyncTask;
 import android.view.KeyEvent;
 
 public class GameVsComputer extends GameClass {
@@ -28,16 +28,16 @@ public class GameVsComputer extends GameClass {
 
 	public static final PlayingMode PLAYING_VERSUS = PlayingMode.PlayerVsComputer;
 
-	private final ExecutorService service;
-	private final ScheduledExecutorService canceller;
+	//	private final ExecutorService service;
+	//	private final ScheduledExecutorService canceller;
 
 	private Thread initializeThread;
 
 	public GameVsComputer(Activity activity, Callback finishGameCallBack) {
 		super(finishGameCallBack);
 
-		service = Executors.newFixedThreadPool(1);
-		canceller = Executors.newScheduledThreadPool(1);
+		//		service = Executors.newFixedThreadPool(1);
+		//		canceller = Executors.newScheduledThreadPool(1);
 	}
 
 	@Override
@@ -52,8 +52,14 @@ public class GameVsComputer extends GameClass {
 
 	@Override
 	public void initializePlacingShips(boolean _fromNetwork) {
-		isHostPlayingFirst = random.nextBoolean();
-		setRandomVar(random.nextLong());
+		if (ComputerAI.DEBUG_AI) {
+			ComputerAI.randomPlaceShips = new Random(1);
+			ComputerAI.randomAI = new Random(1);
+			GameClass.randomNotSo = new Random(1);
+		}
+
+		isHostPlayingFirst = ComputerAI.randomAI.nextBoolean();
+		setRandomVar(ComputerAI.randomAI.nextLong());
 
 		maxX = currentFleet.maxX;
 		maxY = currentFleet.maxY;
@@ -67,14 +73,8 @@ public class GameVsComputer extends GameClass {
 		player1.setEnemy(player2);
 		player2.setEnemy(player1);
 
-		//		initializeThread = new Thread(new Runnable() {
-		//			@Override
-		//			public void run() {
 		((ComputerAI) player2).initialize(shipsToPlace);
 		((ComputerAI) player2).computerPlaceYourShips(false);
-		//			}
-		//		});
-		//		initializeThread.start();
 	}
 
 	@Override
@@ -102,7 +102,7 @@ public class GameVsComputer extends GameClass {
 					nextTurn.targets.add(list);
 					currentPlayer.setNumberOfTargets(nextTurn.targets);
 
-					for (final Coordinate coor : bonus.getPositions()) {
+					for (final Coordinate2 coor : bonus.getPositions()) {
 						currentPlayer.setPosition(coor);
 						currentPlayer.chooseTarget();
 					}
@@ -171,39 +171,69 @@ public class GameVsComputer extends GameClass {
 			}
 		}
 
-		class PlayTurn implements Callable<Void> {
+		class TaskKiller extends TimerTask {
+			private final AsyncTask<?, ?, ?> mTask;
+			private final int turnNumber;
+
+			public TaskKiller(AsyncTask<?, ?, ?> task, int turnNumber) {
+				this.mTask = task;
+				this.turnNumber = turnNumber;
+			}
+
 			@Override
-			public Void call() throws Exception {
+			public void run() {
+				mTask.cancel(true);
+				final ComputerAI computerAI = (ComputerAI) player2;
+				if (computerAI.ANTIBLOCK_IS_SHOOTING && computerAI.ANTIBLOCK_LAST_SHOT_TURN < turnNumber) {
+					computerAI.playYourTurnRandom();
+				}
+			}
+		}
+
+		class PlayTurn extends AsyncTask<Integer, Void, Void> {
+			@Override
+			protected Void doInBackground(Integer... params) {
+				Timer timer = new Timer();
+				timer.schedule(new TaskKiller(this, params[0]), 20 * 1000);
 				((ComputerAI) player2).playYourTurn();
+				timer.cancel();
 				return null;
 			}
 		}
 
-		//		class Update implements Callable<Void> {
+		//		class PlayTurn implements Callable<Void> {
 		//			@Override
 		//			public Void call() throws Exception {
-		//				((ComputerAI) player2).DEBUG_updateGameStatus();
+		//				((ComputerAI) player2).playYourTurn();
 		//				return null;
 		//			}
 		//		}
+
+		//		class AntiBlockPlayTurn implements Callable<Void> {
+		//			private final int turnNumber;
 		//
-		//		class Wait implements Callable<Void> {
-		//
-		//			private final int time;
-		//
-		//			public Wait(int time) {
-		//				this.time = time;
+		//			public AntiBlockPlayTurn(int turnNumber) {
+		//				this.turnNumber = turnNumber;
 		//			}
 		//
 		//			@Override
 		//			public Void call() throws Exception {
-		//				Thread.sleep(time * 1000);
+		//				final ComputerAI computerAI = (ComputerAI) player2;
+		//				if (computerAI.ANTIBLOCK_IS_SHOOTING && computerAI.ANTIBLOCK_LAST_SHOT_TURN < turnNumber) {
+		//					Log.i(TAG, "Unblocking this shit!");
+		//					service.shutdownNow();
+		//					computerAI.playYourTurnRandom();
+		//				}
 		//				return null;
 		//			}
 		//		}
 
 		if (currentPlayer == player2) {
-			service.submit(new PlayTurn());
+			new PlayTurn().execute(getTurnNumber());
+			//			final PlayTurn task = new PlayTurn();
+			//			service.submit(task);
+			//
+			//			canceller.schedule(new AntiBlockPlayTurn(getTurnNumber()), 10, TimeUnit.SECONDS);
 
 			//			if (ComputerAI.DEBUG_AI) {
 			//				//new Scheduler().execute(new Update(), 10)./*execute(new Wait(3), 10).*/execute(new PlayTurn(), 10);
@@ -211,28 +241,8 @@ public class GameVsComputer extends GameClass {
 			//			} else {
 			//				execute(new PlayTurn(), 10);
 			//			}
-
-			//			new Thread(new Runnable() {
-			//				@Override
-			//				public void run() {
-			//					((ComputerAI) player2).playYourTurn();
-			//				}
-			//			}).start();
 		}
 	}
-
-	//	private void execute(Callable<?> c, int time) {
-	//		final Future<?> future = service.submit(c);
-	//		canceller.schedule(new Runnable() {
-	//			@Override
-	//			public void run() {
-	//				//				if (future.cancel(true)) {
-	//				//					Log.i(TAG, "Task cancelled!!");
-	//				//					((ComputerAI) player2).playYourTurnRandom();
-	//				//				}
-	//			}
-	//		}, time, TimeUnit.SECONDS);
-	//	}
 
 	@Override
 	public void pauseUnpauseGame(boolean _fromNetwork) {
@@ -263,7 +273,7 @@ public class GameVsComputer extends GameClass {
 
 		switch (this.gameState) {
 		case ChoosingMode:
-			GUI = new ChooseScreen(SCREENX, SCREENY, this);
+			GUI = new ChooseScreen(SCREENX, SCREENY, this, PLAYING_VERSUS);
 			break;
 		case PlacingShips:
 			initializePlacingShips(false);

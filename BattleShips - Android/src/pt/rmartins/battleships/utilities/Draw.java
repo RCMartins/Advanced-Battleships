@@ -46,4 +46,22 @@ public final class Draw {
 			sb.append(str);
 		return sb.toString();
 	}
+
+	public static void setPaintFitWidth(float maxWidth, Paint paint, String... strings) {
+		for (String str : strings) {
+			setPaintFitStringAux(maxWidth, Float.MAX_VALUE, paint, str);
+		}
+	}
+
+	public static void setPaintFit(float maxWidth, float maxHeight, Paint paint, String... strings) {
+		for (String str : strings) {
+			setPaintFitStringAux(maxWidth, maxHeight, paint, str);
+		}
+	}
+
+	private static void setPaintFitStringAux(float maxWidth, float maxHeight, Paint paint, String str) {
+		while (getStrWidth(paint, str) > maxWidth || getStrHeight(paint, str) > maxHeight) {
+			paint.setTextSize(paint.getTextSize() - 1);
+		}
+	}
 }

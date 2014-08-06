@@ -121,10 +121,10 @@ public class MainActivity extends Activity {
 		System.exit(0);
 	}
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-		com.facebook.Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
-	}
+	//	@Override
+	//	protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+	//		super.onActivityResult(requestCode, resultCode, data);
+	//		com.facebook.Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
+	//	}
 
 }

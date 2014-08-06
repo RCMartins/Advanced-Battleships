@@ -4,6 +4,10 @@ import android.graphics.Canvas;
 
 public interface MyPanel {
 
+	//	public enum RotationType {
+	//		Portrait, Landscape;
+	//	}
+
 	void startTime();
 
 	void update();

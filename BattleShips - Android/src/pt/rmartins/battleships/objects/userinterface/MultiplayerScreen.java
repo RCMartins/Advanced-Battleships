@@ -49,8 +49,7 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 	private static float GAMES_DIST_Y;
 
 	private final Game game;
-	private final float maxX;
-	private final float maxY;
+	private int maxX, maxY;
 	private final Connection conn;
 
 	private int retriesLeft;
@@ -114,8 +113,6 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 	}
 
 	public MultiplayerScreen(int maxX, int maxY, Game game, Connection conn) {
-		this.maxX = maxX;
-		this.maxY = maxY;
 		this.game = game;
 		this.conn = conn;
 
@@ -123,7 +120,7 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 		timeToEnableRefresh = 0.0;
 
 		existingGames = null;
-		initializeAreas();
+		initializeGUI(maxX, maxY);
 
 		retriesLeft = ConnectionCallback.MAX_CONNECTION_RETRIES;
 
@@ -140,7 +137,10 @@ public class MultiplayerScreen extends UserInterfaceClass implements ConnectionC
 		conn.removeConnectionCallBack(this);
 	}
 
-	private synchronized void initializeAreas() {
+	@Override
+	public synchronized void initializeGUI(int maxX, int maxY) {
+		this.maxX = maxX;
+		this.maxY = maxY;
 		CREATE_GAME_TEXT = LanguageClass.getString(CREATE_GAME_CODE);
 		JOIN_GAME_TEXT = LanguageClass.getString(JOIN_GAME_CODE);
 		NOT_CONNECTED_TEXT = LanguageClass.getString(NOT_CONNECTED_CODE);

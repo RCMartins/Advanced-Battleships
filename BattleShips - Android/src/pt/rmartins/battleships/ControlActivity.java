@@ -122,7 +122,8 @@ public class ControlActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		GameClass.loadSettings(this);
+		if (initialized)
+			GameClass.loadSettings(this);
 	}
 
 	@Override

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Message;
 import pt.rmartins.battleships.objects.Message.MessageUnit.TypesMessageUnits;
 
@@ -14,8 +14,8 @@ public class MessageAI extends Message {
 
 	public MessageAI(Message messageToCopy) {
 		super(messageToCopy.getTurnType(), messageToCopy.getTurnNumber(), new ArrayList<MessageUnit>(
-				messageToCopy.getParts()), new ArrayList<Coordinate>(messageToCopy.getCoors()),
-				new ArrayList<Coordinate>(messageToCopy.getCounter()), messageToCopy.wasFirstBlood());
+				messageToCopy.getParts()), new ArrayList<Coordinate2>(messageToCopy.getCoors()),
+				new ArrayList<Coordinate2>(messageToCopy.getCounter()), messageToCopy.wasFirstBlood());
 		//		shipsWithMessage = new ArrayList<ShipComputer>();
 	}
 

@@ -106,8 +106,8 @@ public abstract class ScreenUtils extends UserInterfaceClass {
 
 		if (showFieldSize) {
 			y += dy;
-			final int fieldX = game.getCurrentFleet().maxX;
-			final int fieldY = game.getCurrentFleet().maxY;
+			final int fieldX = game.getMaxX();
+			final int fieldY = game.getMaxY();
 			canvas.drawText(LanguageClass.getString(GAMEINFO_FIELD_SIZE_CODE, fieldX, fieldY), x, y, LEFT_TEXT_PAINT);
 		}
 

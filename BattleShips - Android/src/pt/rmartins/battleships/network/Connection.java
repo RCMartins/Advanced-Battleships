@@ -2,7 +2,7 @@ package pt.rmartins.battleships.network;
 
 import java.util.List;
 
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Ship;
 
 public interface Connection {
@@ -11,13 +11,13 @@ public interface Connection {
 
 	public void sendInitializingInformation(boolean hostPlayingFirst, long randomSeed);
 
-	public void sendReadyToStart();
-
 	public void sendShipsPosition(List<Ship> ships);
 
-	public void sendCancelPlaceShips();
+	public void sendReadyToStart();
 
-	public void sendShotsAndCounters(List<Coordinate> shotsList, List<Coordinate> counterList);
+	public void sendCancelReadyToStart();
+
+	public void sendShotsAndCounters(List<Coordinate2> shotsList, List<Coordinate2> counterList);
 
 	public void sendPause();
 
@@ -41,17 +41,15 @@ public interface Connection {
 
 	boolean isConnected();
 
-	public void closeConnection();
-
-	public String getJoinedGameId();
-
 	public void close();
 
 	/* #END Connection */
 
 	/* #BEGIN Nuggeta Logic */
 
-	public void createGame(String gameModeStr, List<Integer> fleet, int maxX, int maxY);
+	public void hostGame(String gameModeStr, List<Integer> fleet, int maxX, int maxY);
+
+	public void unHostGame(String gameId);
 
 	public void refreshGames();
 
@@ -59,7 +57,7 @@ public interface Connection {
 
 	public void unJoinGame(String gameId);
 
-	public void unHostGame(String gameId);
+	public String getJoinedGameId();
 
 	public boolean isHost();
 

@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import pt.rmartins.battleships.R;
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.PlayerClass.Shot;
 import pt.rmartins.battleships.objects.PlayerClass.Shot.KindShot;
 import pt.rmartins.battleships.utilities.LanguageClass;
@@ -73,14 +73,14 @@ public abstract class GameBonus implements Comparable<GameBonus> {
 
 	public static class Explosion extends GameBonus {
 
-		private final List<Coordinate> positions;
+		private final List<Coordinate2> positions;
 
-		public Explosion(List<Coordinate> positions) {
+		public Explosion(List<Coordinate2> positions) {
 			super(BonusTypes.Explosion);
 			this.positions = positions;
 		}
 
-		public List<Coordinate> getPositions() {
+		public List<Coordinate2> getPositions() {
 			return positions;
 		}
 

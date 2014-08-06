@@ -43,7 +43,7 @@ public interface Player {
 
 	public void getMessagesUnlock();
 
-	public Coordinate getPosition();
+	public Coordinate2 getPosition();
 
 	public int getPositionX();
 
@@ -84,19 +84,19 @@ public interface Player {
 	 * @param y
 	 * @return The mark at the position (Always != null)
 	 */
-	public Mark markAt(Coordinate coor);
+	public Mark markAt(Coordinate2 coor);
 
 	public void movePosition(int x, int y);
 
 	public void movePositionAbsolute(int x, int y);
 
-	public Message messageAt(Coordinate coor);
+	public Message messageAt(Coordinate2 coor);
 
 	public Message messageAt(int x, int y);
 
 	public boolean placeShip();
 
-	public Coordinate rotateShipClockwise();
+	public Coordinate2 rotateShipClockwise();
 
 	public void setEnemy(Player enemy);
 
@@ -104,7 +104,7 @@ public interface Player {
 
 	public void setNumberOfTargets(List<List<KindShot>> list);
 
-	public void setPosition(Coordinate newPosition);
+	public void setPosition(Coordinate2 newPosition);
 
 	public boolean setPositionToRandomLocation(boolean justSimpleRandom);
 
@@ -114,7 +114,7 @@ public interface Player {
 
 	public void setShipFieldVisible(boolean visible);
 
-	public Ship shipAt(Coordinate coor);
+	public Ship shipAt(Coordinate2 coor);
 
 	public Ship shipAt(int x, int y);
 
@@ -163,9 +163,9 @@ public interface Player {
 
 	public boolean allShotsPlaced();
 
-	public List<Double> getCounterAttackProbability(List<Coordinate> list);
+	public List<Double> getCounterAttackProbability(List<Coordinate2> list);
 
-	public void setNetworkCounterList(List<Coordinate> networkCounterList);
+	public void setNetworkCounterList(List<Coordinate2> networkCounterList);
 
 	public void optimizeShips();
 

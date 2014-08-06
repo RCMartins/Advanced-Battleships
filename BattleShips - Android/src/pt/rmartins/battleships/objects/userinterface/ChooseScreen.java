@@ -6,10 +6,11 @@ import java.util.Comparator;
 import java.util.List;
 
 import pt.rmartins.battleships.R;
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Fleet;
 import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.Game.GameState;
+import pt.rmartins.battleships.objects.Game.PlayingMode;
 import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.objects.ShipClass;
 import pt.rmartins.battleships.objects.ShipClass.ShipData;
@@ -55,8 +56,8 @@ public class ChooseScreen extends UserInterfaceClass {
 	private float TEXT_HEIGHT;
 
 	private final Game game;
-	private final float maxX;
-	private final float maxY;
+	private final PlayingMode playingVersus;
+	private int maxX, maxY;
 	private State state;
 
 	private Fleet currentFleet;
@@ -71,22 +72,25 @@ public class ChooseScreen extends UserInterfaceClass {
 	private float firstX, firstY, lastX, lastY;
 	private boolean swipeTouchDown;
 
-	public ChooseScreen(int maxX, int maxY, Game game) {
-		this.maxX = maxX;
-		this.maxY = maxY;
+	public ChooseScreen(int maxX, int maxY, Game game, PlayingMode playingVersus) {
 		this.game = game;
+		this.playingVersus = playingVersus;
 
 		state = State.Fleet;
 
 		currentFleetIndex = 0;
 		final List<Fleet> avaiableFleets = GameClass.getAvaiableFleets();
 		currentFleet = avaiableFleets.get(currentFleetIndex);
+		if (!currentFleet.isAIready()) {
+			currentFleetIndex = nextFleetIndex(1);
+			currentFleet = avaiableFleets.get(currentFleetIndex);
+		}
 		currentGameModeIndex = 0;
 		currentGameMode = GameClass.getGameModes().get(currentGameModeIndex);
 
 		SWIPE_X_THRESHOLD = maxX / 3;
 
-		initializeAreas();
+		initializeGUI(maxX, maxY);
 
 		final int numberOfFleets = avaiableFleets.size();
 		showFleet = new ArrayList<ShowFleetData>(numberOfFleets);
@@ -126,7 +130,10 @@ public class ChooseScreen extends UserInterfaceClass {
 
 	}
 
-	private void initializeAreas() {
+	@Override
+	public synchronized void initializeGUI(int maxX, int maxY) {
+		this.maxX = maxX;
+		this.maxY = maxY;
 		CHOOSE_FLEET_TEXT = LanguageClass.getString(CHOOSE_FLEET_CODE);
 		CHOOSE_GAME_MODE_TEXT = LanguageClass.getString(CHOOSE_GAME_MODE_CODE);
 
@@ -172,8 +179,7 @@ public class ChooseScreen extends UserInterfaceClass {
 					}
 
 					if (state == State.Fleet) {
-						final List<Fleet> avaiableFleets = GameClass.getAvaiableFleets();
-						int nextIndex = (avaiableFleets.size() + currentFleetIndex + index) % avaiableFleets.size();
+						int nextIndex = nextFleetIndex(index);
 						drawState(canvas, nextIndex, currentGameMode);
 					} else if (state == State.GameMode) {
 						final List<GameMode> gameModes = GameClass.getGameModes();
@@ -199,6 +205,19 @@ public class ChooseScreen extends UserInterfaceClass {
 		} else if (state == State.FieldSize) {
 
 		}
+	}
+
+	private int nextFleetIndex(int index) {
+		final List<Fleet> avaiableFleets = GameClass.getAvaiableFleets();
+		int count = 0;
+		int fleetIndex = currentFleetIndex;
+		do {
+			fleetIndex = (avaiableFleets.size() + fleetIndex + index) % avaiableFleets.size();
+			count++;
+			if (count == avaiableFleets.size())
+				break;
+		} while (!avaiableFleets.get(fleetIndex).isAIready());
+		return fleetIndex;
 	}
 
 	@Override
@@ -234,8 +253,7 @@ public class ChooseScreen extends UserInterfaceClass {
 					if (index != 0) {
 						if (state == State.Fleet) {
 							final List<Fleet> avaiableFleets = GameClass.getAvaiableFleets();
-							currentFleetIndex = (avaiableFleets.size() + currentFleetIndex + index)
-									% avaiableFleets.size();
+							currentFleetIndex = nextFleetIndex(index);
 							currentFleet = avaiableFleets.get(currentFleetIndex);
 						} else if (state == State.GameMode) {
 							final List<GameMode> gameModes = GameClass.getGameModes();
@@ -410,10 +428,10 @@ public class ChooseScreen extends UserInterfaceClass {
 			}
 		}
 
-		private void drawShip(Canvas canvas, float initX, float initY, float ss, List<Coordinate> listPieces,
+		private void drawShip(Canvas canvas, float initX, float initY, float ss, List<Coordinate2> listPieces,
 				Paint shipPaint) {
 			canvas.translate(initX, initY);
-			for (Coordinate coor : listPieces) {
+			for (Coordinate2 coor : listPieces) {
 				final float x1 = coor.x * ss;
 				final float y1 = coor.y * ss;
 				final float x2 = (coor.x + 1) * ss;

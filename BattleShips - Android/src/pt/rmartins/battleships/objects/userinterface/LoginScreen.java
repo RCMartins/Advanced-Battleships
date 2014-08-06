@@ -37,7 +37,7 @@ public class LoginScreen extends UserInterfaceClass implements KeyboardInterface
 	private MyButton CONTINUE_BUTTON, NICKNAME_CHANGE_AREA;
 	private RectF NICKNAME_AREA;
 
-	private final int maxX, maxY;
+	private int maxX, maxY;
 	private final Game game;
 	private final Activity activity;
 	private final Connection conn;
@@ -46,8 +46,6 @@ public class LoginScreen extends UserInterfaceClass implements KeyboardInterface
 	private final InputMethodManager inputMethodManager;
 
 	public LoginScreen(int maxX, int maxY, Game game, Activity activity, Connection conn) {
-		this.maxX = maxX;
-		this.maxY = maxY;
 		this.game = game;
 		this.activity = activity;
 		this.conn = conn;
@@ -56,7 +54,7 @@ public class LoginScreen extends UserInterfaceClass implements KeyboardInterface
 
 		inputMethodManager = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
 
-		initialize();
+		initializeGUI(maxX, maxY);
 	}
 
 	public static void initializeScreenMultiplier(Context context, float SCREEN_SUPPORT_MULTIPLIER) {
@@ -78,7 +76,10 @@ public class LoginScreen extends UserInterfaceClass implements KeyboardInterface
 		RIGHT_TEXT_PAINT.setTextAlign(Paint.Align.RIGHT);
 	}
 
-	private void initialize() {
+	@Override
+	public synchronized void initializeGUI(int maxX, int maxY) {
+		this.maxX = maxX;
+		this.maxY = maxY;
 		NICKNAME_TEXT = LanguageClass.getString(NICKNAME_CODE);
 		CONTINUE_TEXT = LanguageClass.getString(CONTINUE_CODE);
 

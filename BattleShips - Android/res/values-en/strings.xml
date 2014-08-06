@@ -37,9 +37,9 @@
 	<string name="condition_type_holyshit_detail">		Destroy ships in 10 or more turns in a row</string>
 	
 	<string name="placing_ships_undo">Undo</string>
-	<string name="placing_ships_clear">Undo All</string>
+	<string name="placing_ships_clear">Reset</string>
 	<string name="placing_ships_rotate">Rotate</string>
-	<string name="placing_ships_next">Next</string>
+	<string name="placing_ships_next">Next Ship</string>
 	<string name="placing_ships_ready">Ready</string>
 	<string name="placing_ships_waiting">Waiting</string>
 	<string name="placing_ships_enemy_ready">Enemy ready</string>

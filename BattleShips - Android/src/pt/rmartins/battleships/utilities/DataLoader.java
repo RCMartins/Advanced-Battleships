@@ -11,7 +11,7 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 
 import pt.rmartins.battleships.R;
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Fleet;
 import pt.rmartins.battleships.objects.Game;
 import pt.rmartins.battleships.objects.GameClass;
@@ -326,11 +326,11 @@ public final class DataLoader {
 		s.append("shotsequence:\n");
 		final List<Message> messages = player.getMessagesLock();
 		for (Message m : messages) {
-			for (Coordinate coor : m.getCoors()) {
+			for (Coordinate2 coor : m.getCoors()) {
 				s.append(coor.toStringOnlyNumbers() + " ");
 			}
 			s.append("-1 ");
-			for (Coordinate coor : m.getCounter()) {
+			for (Coordinate2 coor : m.getCounter()) {
 				s.append(coor.toStringOnlyNumbers());
 			}
 			s.append("\n");

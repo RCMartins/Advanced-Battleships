@@ -104,7 +104,7 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 					nextTurn.targets.add(list);
 					currentPlayer.setNumberOfTargets(nextTurn.targets);
 
-					for (final Coordinate coor : bonus.getPositions()) {
+					for (final Coordinate2 coor : bonus.getPositions()) {
 						currentPlayer.setPosition(coor);
 						currentPlayer.chooseTarget();
 					}
@@ -177,8 +177,8 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 	@Override
 	public void initializePlacingShips(boolean fromNetwork) {
 		if (!fromNetwork) {
-			isHostPlayingFirst = random.nextBoolean();
-			long newSeed = random.nextLong();
+			isHostPlayingFirst = randomThings.nextBoolean();
+			long newSeed = randomThings.nextLong();
 			setRandomVar(newSeed);
 			conn.sendInitializingInformation(isHostPlayingFirst, newSeed);
 		}
@@ -211,7 +211,7 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 			setNewGUI(new LobbyScreen(SCREENX, SCREENY, this, conn));
 			break;
 		case ChoosingMode:
-			setNewGUI(new ChooseScreen(SCREENX, SCREENY, this));
+			setNewGUI(new ChooseScreen(SCREENX, SCREENY, this, PLAYING_VERSUS));
 			break;
 		case SendInitializingInformation:
 			setNewGUI(null);
@@ -237,7 +237,7 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 			((PlayInterface) GUI).changedStateEvent(this.gameState);
 
 		if (this.gameState == GameState.FinishedChoosingMode) {
-			conn.createGame(currentGameMode.toFileLanguage(), currentFleet.getFleetNumbers(), currentFleet.maxX,
+			conn.hostGame(currentGameMode.toFileLanguage(), currentFleet.getFleetNumbers(), currentFleet.maxX,
 					currentFleet.maxY);
 			setGameState(GameState.MultiplayerMenu);
 		}
@@ -254,7 +254,7 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 		super.closeResources();
 		//TODO: só chamar isto se o utilizador fechar a aplicação!!!!! (ou sair do multiplayer)
 		if (conn != null) {
-			conn.closeConnection();
+			conn.close();
 			conn = null;
 		}
 	}
@@ -295,9 +295,9 @@ public class GameVsPlayer extends GameClass implements PlayCallback {
 	}
 
 	@Override
-	public void receiveShotsAndCounters(List<Coordinate> shotsList, List<Coordinate> counterList) {
+	public void receiveShotsAndCounters(List<Coordinate2> shotsList, List<Coordinate2> counterList) {
 		Player enemy = player2;
-		for (Coordinate coor : shotsList) {
+		for (Coordinate2 coor : shotsList) {
 			enemy.setPosition(coor);
 			enemy.chooseTarget();
 		}

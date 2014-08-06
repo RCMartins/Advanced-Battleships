@@ -51,4 +51,13 @@ public class Fleet {
 	public int size() {
 		return size;
 	}
+
+	public boolean isAIready() {
+		for (int i = 1; i < fleet.size(); i++) {
+			int amount = fleet.get(i);
+			if (amount > 1)
+				return false;
+		}
+		return true;
+	}
 }

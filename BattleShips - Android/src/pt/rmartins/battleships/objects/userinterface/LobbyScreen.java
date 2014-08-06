@@ -44,7 +44,7 @@ public class LobbyScreen extends UserInterfaceClass implements ConnectionCallbac
 	private MyButton START_GAME_BUTTON;
 	private RectF MY_NICKNAME_AREA, VS_AREA, ENEMY_NICKNAME_AREA, FLEET_AREA, GAME_MODE_AREA;
 
-	private final int maxX, maxY;
+	private int maxX, maxY;
 	private final Game game;
 	private final Connection conn;
 	private final String lobbyId;
@@ -55,8 +55,6 @@ public class LobbyScreen extends UserInterfaceClass implements ConnectionCallbac
 	private final ShowFleetData showFleet;
 
 	public LobbyScreen(int maxX, int maxY, Game game, Connection conn) {
-		this.maxX = maxX;
-		this.maxY = maxY;
 		this.game = game;
 		this.conn = conn;
 
@@ -67,7 +65,7 @@ public class LobbyScreen extends UserInterfaceClass implements ConnectionCallbac
 		myNickname = GameClass.getMultiplayerNickname();
 		enemyNickname = "";
 
-		initialize();
+		initializeGUI(maxX, maxY);
 		showFleet = new ShowFleetData(FLEET_AREA, TEXT_HEIGHT, game.getCurrentFleet());
 	}
 
@@ -96,7 +94,10 @@ public class LobbyScreen extends UserInterfaceClass implements ConnectionCallbac
 		RIGHT_TEXT_PAINT.setTextAlign(Paint.Align.RIGHT);
 	}
 
-	private void initialize() {
+	@Override
+	public synchronized void initializeGUI(int maxX, int maxY) {
+		this.maxX = maxX;
+		this.maxY = maxY;
 		START_GAME_TEXT = LanguageClass.getString(START_GAME_CODE);
 		VS_TEXT = LanguageClass.getString(VS_CODE);
 

@@ -40,9 +40,8 @@ public abstract class UserInterfaceClass implements UserInterface {
 		BORDER_BUTTON_PAINT.setColor(COLOR_BORDER_BUTTON);
 	}
 
-	private static int BACKUP_COLOR;
-
 	protected void drawButton(Canvas canvas, String text, RectF rect, Paint textPaint) {
+		int BACKUP_COLOR = 0;
 		Paint buttonBackPaint = NORMAL_BUTTON_PAINT;
 		if (rect instanceof MyButton) {
 			final MyButton myButton = (MyButton) rect;

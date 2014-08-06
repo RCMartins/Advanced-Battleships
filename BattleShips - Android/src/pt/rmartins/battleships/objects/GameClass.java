@@ -9,7 +9,6 @@ import java.util.Queue;
 import java.util.Random;
 
 import pt.rmartins.battleships.objects.PlayerClass.Shot.KindShot;
-import pt.rmartins.battleships.objects.ai.ComputerAI;
 import pt.rmartins.battleships.objects.modes.GameMode;
 import pt.rmartins.battleships.objects.modes.GameMode.BonusPlay;
 import pt.rmartins.battleships.objects.modes.GameMode.TimeLimitType;
@@ -33,14 +32,14 @@ public abstract class GameClass implements Game {
 	@SuppressWarnings("unused")
 	private static final String TAG = GameClass.class.getSimpleName();
 
-	public static final Random random;
-
-	static {
-		if (ComputerAI.DEBUG_AI)
-			random = new Random(1);
-		else
-			random = new Random();
-	}
+	public static final Random randomThings = new Random();
+	public static Random randomNotSo = new Random();
+	//	static {
+	//		if (ComputerAI.DEBUG_AI)
+	//			randomNotSo = new Random(1);
+	//		else
+	//			randomNotSo
+	//	}
 
 	private static Context context;
 	private static Resources res;
@@ -266,8 +265,8 @@ public abstract class GameClass implements Game {
 	protected abstract void goNextTurn();
 
 	@Override
-	public boolean isInsideField(Iterable<Coordinate> coordenadas) {
-		for (final Coordinate coor : coordenadas) {
+	public boolean isInsideField(Iterable<Coordinate2> coordenadas) {
+		for (final Coordinate2 coor : coordenadas) {
 			if (!isInsideField(coor.x, coor.y)) {
 				return false;
 			}
@@ -281,7 +280,7 @@ public abstract class GameClass implements Game {
 	}
 
 	@Override
-	public boolean isInsideField(Coordinate coor) {
+	public boolean isInsideField(Coordinate2 coor) {
 		return coor.x >= 0 && coor.x < maxX && coor.y >= 0 && coor.y < maxY;
 	}
 
@@ -496,6 +495,9 @@ public abstract class GameClass implements Game {
 	public synchronized void changeMAX(int width, int height) {
 		SCREENX = width;
 		SCREENY = height;
+		if (GUI != null) {
+			GUI.initializeGUI(SCREENX, SCREENY);
+		}
 	}
 
 	@Override

@@ -37,9 +37,9 @@
 	<string name="condition_type_holyshit_detail">		Destruir barcos em 10 ou mais jogadas seguidas</string>
 	
 	<string name="placing_ships_undo">Remover</string>
-	<string name="placing_ships_clear">Remover Todos</string>
+	<string name="placing_ships_clear">Recomeçar</string>
 	<string name="placing_ships_rotate">Rodar</string>
-	<string name="placing_ships_next">Seguinte</string>
+	<string name="placing_ships_next">Barco Seguinte</string>
 	<string name="placing_ships_ready">Pronto</string>
 	<string name="placing_ships_waiting">À espera</string>
 	<string name="placing_ships_enemy_ready">Adversário pronto</string>

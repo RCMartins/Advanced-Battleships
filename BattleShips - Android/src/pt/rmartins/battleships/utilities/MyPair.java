@@ -39,6 +39,7 @@ public class MyPair<A, B> {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
+		@SuppressWarnings("rawtypes")
 		MyPair other = (MyPair) obj;
 		if (first == null) {
 			if (other.first != null)

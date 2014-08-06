@@ -13,7 +13,7 @@ import java.lang.StringBuilder;
 import android.util.Log;
 
 import pt.rmartins.battleships.objects.ShipClass;
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.utilities.LanguageClass;
 
 public class ParserShips implements ParserShipsConstants {
@@ -100,7 +100,7 @@ public class ParserShips implements ParserShipsConstants {
   }
 
   final public void readShip(List<Locale> languages) throws ParseException {
-  Token t; StringBuilder sb; List<Coordinate> parts; Map<String, String> names; int index;
+  Token t; StringBuilder sb; List<Coordinate2> parts; Map<String, String> names; int index;
     names = new TreeMap<String, String>(); index = 0;
       sb = new StringBuilder();
     label_4:
@@ -189,15 +189,15 @@ public class ParserShips implements ParserShipsConstants {
       ShipClass.createNewShip(names, parts);
   }
 
-  final public List<Coordinate > readCoordinates() throws ParseException {
-  Token x, y; List<Coordinate> list;
-    list = new ArrayList<Coordinate>();
+  final public List<Coordinate2 > readCoordinates() throws ParseException {
+  Token x, y; List<Coordinate2> list;
+    list = new ArrayList<Coordinate2>();
     label_7:
     while (true) {
       x = jj_consume_token(NUM);
       jj_consume_token(COMMA);
       y = jj_consume_token(NUM);
-                                        list.add(new Coordinate(Integer.parseInt(x.image), Integer.parseInt(y.image)));
+                                        list.add(new Coordinate2(Integer.parseInt(x.image), Integer.parseInt(y.image)));
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case NUM:
         ;

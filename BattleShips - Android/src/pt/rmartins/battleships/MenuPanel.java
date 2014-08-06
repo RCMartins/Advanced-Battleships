@@ -2,6 +2,7 @@ package pt.rmartins.battleships;
 
 import pt.rmartins.battleships.objects.Callback;
 import pt.rmartins.battleships.objects.Game;
+import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.objects.userinterface.MainMenu;
 import pt.rmartins.battleships.objects.userinterface.UserInterface;
 import android.app.Activity;
@@ -86,9 +87,12 @@ public class MenuPanel extends SurfaceView implements SurfaceHolder.Callback, My
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 		MenuPanel.width = width;
 		MenuPanel.height = height;
+		GameClass.loadSettings(activity);
 		if (game == null) {
 			if (GUI == null)
 				GUI = new MainMenu(width, height, activity, NEW_GAME, EXIT_GAME);
+			else
+				GUI.initializeGUI(width, height);
 		} else
 			game.changeMAX(width, height);
 	}

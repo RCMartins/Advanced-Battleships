@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import pt.rmartins.battleships.network.ConnectionCallback.GameDefinition;
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.objects.Ship;
 import pt.rmartins.battleships.objects.ShipClass;
@@ -232,9 +232,9 @@ public class ConnectionNugetta implements Connection {
 		} else if (message instanceof NuggTurn) {
 			final NuggTurn nuggTurn = (NuggTurn) message;
 			{
-				final List<Coordinate> shots = Collections.unmodifiableList(convertListNuggToCoordinate(nuggTurn
+				final List<Coordinate2> shots = Collections.unmodifiableList(convertListNuggToCoordinate(nuggTurn
 						.getShots()));
-				final List<Coordinate> counters = Collections.unmodifiableList(convertListNuggToCoordinate(nuggTurn
+				final List<Coordinate2> counters = Collections.unmodifiableList(convertListNuggToCoordinate(nuggTurn
 						.getCounters()));
 				callbackHelper.receiveShotsAndCounters(shots, counters);
 			}
@@ -328,29 +328,29 @@ public class ConnectionNugetta implements Connection {
 	}
 
 	@Override
-	public void sendCancelPlaceShips() {
+	public void sendCancelReadyToStart() {
 		NuggSingleMessage nuggSingleMessage = new NuggSingleMessage();
 		nuggSingleMessage.setMessage(NuggSingleObject.CANCEL_PLACED_SHIPS);
 		nuggetaPlug.sendGameMessage(nuggSingleMessage, myGameID);
 	}
 
 	@Override
-	public void sendShotsAndCounters(List<Coordinate> shotsList, List<Coordinate> counterList) {
+	public void sendShotsAndCounters(List<Coordinate2> shotsList, List<Coordinate2> counterList) {
 		NuggTurn nuggTurn = new NuggTurn();
 		nuggTurn.setShots(convertListCoordinateToNugg(shotsList));
 		nuggTurn.setCounters(convertListCoordinateToNugg(counterList));
 		nuggetaPlug.sendGameMessage(nuggTurn, myGameID);
 	}
 
-	private List<NuggCoordinate> convertListCoordinateToNugg(List<Coordinate> coorList) {
+	private List<NuggCoordinate> convertListCoordinateToNugg(List<Coordinate2> coorList) {
 		List<NuggCoordinate> list = new ArrayList<NuggCoordinate>(coorList.size());
-		for (Coordinate coor : coorList) {
+		for (Coordinate2 coor : coorList) {
 			list.add(convertCoordinateToNugg(coor));
 		}
 		return list;
 	}
 
-	private NuggCoordinate convertCoordinateToNugg(Coordinate coor) {
+	private NuggCoordinate convertCoordinateToNugg(Coordinate2 coor) {
 		NuggCoordinate nuggCoordinate = new NuggCoordinate();
 		nuggCoordinate.setX(coor.x);
 		nuggCoordinate.setY(coor.y);
@@ -358,16 +358,16 @@ public class ConnectionNugetta implements Connection {
 		return nuggCoordinate;
 	}
 
-	private List<Coordinate> convertListNuggToCoordinate(List<NuggCoordinate> nuggList) {
-		List<Coordinate> list = new ArrayList<Coordinate>(nuggList.size());
+	private List<Coordinate2> convertListNuggToCoordinate(List<NuggCoordinate> nuggList) {
+		List<Coordinate2> list = new ArrayList<Coordinate2>(nuggList.size());
 		for (NuggCoordinate nuggCoor : nuggList) {
 			list.add(convertNuggToCoordinate(nuggCoor));
 		}
 		return list;
 	}
 
-	private Coordinate convertNuggToCoordinate(NuggCoordinate nuggCoor) {
-		return new Coordinate(nuggCoor.getX(), nuggCoor.getY());
+	private Coordinate2 convertNuggToCoordinate(NuggCoordinate nuggCoor) {
+		return new Coordinate2(nuggCoor.getX(), nuggCoor.getY());
 	}
 
 	@Override
@@ -404,16 +404,7 @@ public class ConnectionNugetta implements Connection {
 	}
 
 	@Override
-	public void closeConnection() {
-		if (host)
-			unHostGame(myGameID);
-		else
-			unJoinGame(myGameID);
-		nuggetaPlug.stop();
-	}
-
-	@Override
-	public void createGame(String gameModeStr, List<Integer> fleet, int maxX, int maxY) {
+	public void hostGame(String gameModeStr, List<Integer> fleet, int maxX, int maxY) {
 		if (connected) {
 			NMatchMakingConditions matchMakingConditions = new NMatchMakingConditions();
 			matchMakingConditions.setMatchMakingType(MatchMakingType.SEARCH_GAME);
@@ -479,6 +470,7 @@ public class ConnectionNugetta implements Connection {
 			else
 				nuggetaPlug.unjoinGame(myGameID);
 		}
+		nuggetaPlug.stop();
 	}
 
 	@Override

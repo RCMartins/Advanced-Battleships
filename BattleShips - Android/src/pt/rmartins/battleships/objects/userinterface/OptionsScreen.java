@@ -1,7 +1,6 @@
 package pt.rmartins.battleships.objects.userinterface;
 
 import pt.rmartins.battleships.R;
-import pt.rmartins.battleships.objects.Callback;
 import pt.rmartins.battleships.objects.GameClass;
 import pt.rmartins.battleships.utilities.Draw;
 import pt.rmartins.battleships.utilities.LanguageClass;
@@ -35,19 +34,15 @@ public class OptionsScreen extends UserInterfaceClass {
 
 	private String TITLE_TEXT, LANGUAGE_TEXT, SOUND_TEXT, SOUND_ON_TEXT, SOUND_OFF_TEXT;
 
-	private final int maxX, maxY;
+	private int maxX, maxY;
 	private final Activity activity;
-	private final Callback backToMainMenu;
 
 	private float TEXT_HEIGHT;
 
-	public OptionsScreen(int maxX, int maxY, Activity activity, Callback backToMainMenu) {
-		this.maxX = maxX;
-		this.maxY = maxY;
+	public OptionsScreen(int maxX, int maxY, Activity activity) {
 		this.activity = activity;
-		this.backToMainMenu = backToMainMenu;
 
-		initialize();
+		initializeGUI(maxX, maxY);
 	}
 
 	public static void initializeScreenMultiplier(Context context, float SCREEN_SUPPORT_MULTIPLIER) {
@@ -69,7 +64,10 @@ public class OptionsScreen extends UserInterfaceClass {
 		RIGHT_TEXT_PAINT.setTextAlign(Paint.Align.RIGHT);
 	}
 
-	private void initialize() {
+	@Override
+	public void initializeGUI(int maxX, int maxY) {
+		this.maxX = maxX;
+		this.maxY = maxY;
 		TEXT_HEIGHT = Draw.getStrHeight(TEXT_PAINT);
 
 		{
@@ -128,7 +126,7 @@ public class OptionsScreen extends UserInterfaceClass {
 
 		if (buttonDownAndUp(action, x, y, LANGUAGE_CHANGE_BUTTON)) {
 			LanguageClass.setNextLanguage();
-			initialize();
+			initializeGUI(maxX, maxY);
 		} else if (buttonDownAndUp(action, x, y, SOUND_CHANGE_BUTTON)) {
 			GameClass.setSoundIsOn(!GameClass.soundIsOn());
 		}
@@ -136,6 +134,5 @@ public class OptionsScreen extends UserInterfaceClass {
 
 	@Override
 	public synchronized void update(double timeElapsed) {
-		// TODO Auto-generated method stub
 	}
 }

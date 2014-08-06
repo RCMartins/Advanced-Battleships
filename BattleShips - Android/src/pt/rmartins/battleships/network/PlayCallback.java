@@ -3,7 +3,7 @@ package pt.rmartins.battleships.network;
 import java.util.List;
 
 import pt.rmartins.battleships.network.ConnectionCallback.GameDefinition;
-import pt.rmartins.battleships.objects.Coordinate;
+import pt.rmartins.battleships.objects.Coordinate2;
 import pt.rmartins.battleships.objects.Ship;
 
 public interface PlayCallback {
@@ -18,7 +18,7 @@ public interface PlayCallback {
 
 	public void receiveCancelPlaceShips();
 
-	public void receiveShotsAndCounters(List<Coordinate> shotsList, List<Coordinate> counterList);
+	public void receiveShotsAndCounters(List<Coordinate2> shotsList, List<Coordinate2> counterList);
 
 	public void receivePause();
 

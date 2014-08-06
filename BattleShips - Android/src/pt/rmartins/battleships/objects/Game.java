@@ -15,7 +15,7 @@ public interface Game {
 	public static final boolean DEBUG = false;
 	public static final boolean DEBUG2 = false;
 
-	public static final String GAMEVERSION = "0.5c";
+	public static final String GAMEVERSION = "0.6";
 	public static final String PREFERENCES_SETTINGS_FILE_NAME = "settings";
 	public static final String PREFERENCES_INITIALIZED_KEY = "settings_initialized";
 	public static final String PREFERENCES_LOCALE_KEY = "locale";
@@ -31,6 +31,10 @@ public interface Game {
 
 		public boolean isShip() {
 			return this == Ship || this == Ship100;
+		}
+
+		public boolean permanent() {
+			return this == Mark.Water100 || this == Mark.Ship100;
 		}
 	}
 
@@ -87,9 +91,9 @@ public interface Game {
 
 	public TurnState getTurnState();
 
-	public boolean isInsideField(Iterable<Coordinate> coordinates);
+	public boolean isInsideField(Iterable<Coordinate2> coordinates);
 
-	public boolean isInsideField(Coordinate coordinate);
+	public boolean isInsideField(Coordinate2 coordinate);
 
 	public boolean isInsideField(int x, int y);
 

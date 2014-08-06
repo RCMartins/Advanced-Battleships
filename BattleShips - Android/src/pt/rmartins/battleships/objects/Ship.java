@@ -2,7 +2,7 @@ package pt.rmartins.battleships.objects;
 
 import java.util.List;
 
-public interface Ship extends Iterable<Coordinate> {
+public interface Ship extends Iterable<Coordinate2> {
 
 	public int getId();
 
@@ -40,15 +40,13 @@ public interface Ship extends Iterable<Coordinate> {
 
 	public int getNumberPieces();
 
-	public void moveTo(Coordinate position);
+	public void moveTo(Coordinate2 position);
 
 	public void moveTo(int nX, int nY);
 
-	public boolean near(Coordinate coor);
-
 	public boolean near(int x, int y);
 
-	public boolean near(Ship... ships);
+	public boolean near(int x, int y, int dist);
 
 	public boolean near(Iterable<Ship> ships);
 
@@ -65,9 +63,9 @@ public interface Ship extends Iterable<Coordinate> {
 	 */
 	public boolean pieceAt(Coordinate coordinate);
 
-	public Coordinate rotateClockwise(int maxX, int maxY);
+	public Coordinate2 rotateClockwise(int maxX, int maxY);
 
-	public Coordinate rotateTo(int index, int maxX, int maxY);
+	public Coordinate2 rotateTo(int index, int maxX, int maxY);
 
 	public int sizeX();
 
@@ -75,7 +73,7 @@ public interface Ship extends Iterable<Coordinate> {
 
 	public int getSpace();
 
-	public Coordinate trimShip(int maxX, int maxY);
+	public Coordinate2 trimShip(int maxX, int maxY);
 
 	@Override
 	public boolean equals(Object other);
@@ -87,7 +85,7 @@ public interface Ship extends Iterable<Coordinate> {
 	 */
 	public boolean equalsIRXY(Ship other);
 
-	public List<Coordinate> getListPieces();
+	public List<Coordinate2> getListPieces();
 
 	public boolean isSunk(Player player);
 
